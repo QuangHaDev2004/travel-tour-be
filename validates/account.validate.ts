@@ -59,32 +59,31 @@ export const registerPost = async (
   next();
 };
 
-// module.exports.loginPost = async (req, res, next) => {
-//   const schema = Joi.object({
-//     email: Joi.string().required().email().messages({
-//       "string.empty": "Vui lòng nhập email của bạn!",
-//       "string.email": "Email không đúng định dạng!",
-//     }),
+export const loginPost = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const schema = Joi.object({
+    email: Joi.string().required().email().messages({
+      "string.empty": "Vui lòng nhập email của bạn!",
+      "string.email": "Email không đúng định dạng!",
+    }),
 
-//     password: Joi.string().required().messages({
-//       "string.empty": "Vui lòng nhập mật khẩu!",
-//     }),
-//     rememberPassword: Joi.boolean(),
-//   });
+    password: Joi.string().required().messages({
+      "string.empty": "Vui lòng nhập mật khẩu!",
+    }),
+    rememberPassword: Joi.boolean(),
+  });
 
-//   const { error } = schema.validate(req.body);
-//   if (error) {
-//     const errorMessage = error.details[0].message;
+  const { error } = schema.validate(req.body);
+  if (error) {
+    const errorMessage = error.details[0].message;
+    return res.status(400).json({ message: errorMessage });
+  }
 
-//     res.json({
-//       code: "error",
-//       message: errorMessage,
-//     });
-//     return;
-//   }
-
-//   next();
-// };
+  next();
+};
 
 // module.exports.forgotPasswordPost = async (req, res, next) => {
 //   const schema = Joi.object({
