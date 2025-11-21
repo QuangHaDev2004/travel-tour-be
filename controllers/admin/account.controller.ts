@@ -82,7 +82,9 @@ export const loginPost = async (req: Request, res: Response) => {
     const newRecord = new Session({
       userId: existAccount.id,
       refreshToken,
-      expiresAt: Date.now() + REFRESH_TOKEN_TTL,
+      expiresAt: rememberPassword
+        ? new Date(Date.now() + 7 * REFRESH_TOKEN_TTL)
+        : new Date(Date.now() + REFRESH_TOKEN_TTL),
     });
     await newRecord.save();
 
