@@ -71,7 +71,7 @@ export const list = async (req: AccountRequest, res: Response) => {
       categoryList: dataFinal,
     });
   } catch (error) {
-    console.log("Lỗi khi gọi createPost", error);
+    console.log("Lỗi khi gọi list", error);
     res.status(500).json({ message: "Lỗi hệ thống!" });
   }
 };
@@ -100,7 +100,7 @@ export const edit = async (req: AccountRequest, res: Response) => {
       categoryDetail: dataFinal,
     });
   } catch (error) {
-    console.log("Lỗi khi gọi createPost", error);
+    console.log("Lỗi khi gọi edit", error);
     res.status(500).json({ message: "Lỗi hệ thống!" });
   }
 };
@@ -135,7 +135,29 @@ export const editPatch = async (req: AccountRequest, res: Response) => {
 
     res.status(200).json({ message: "Cập nhật thành công!" });
   } catch (error) {
-    console.log("Lỗi khi gọi createPost", error);
+    console.log("Lỗi khi gọi editPatch", error);
+    res.status(500).json({ message: "Lỗi hệ thống!" });
+  }
+};
+
+export const deletePatch = async (req: AccountRequest, res: Response) => {
+  try {
+    const id = req.params.id;
+
+    await Category.updateOne(
+      {
+        _id: id,
+      },
+      {
+        deleted: true,
+        deletedBy: req.account.id,
+        deletedAt: Date.now(),
+      }
+    );
+
+    res.status(200).json({ message: "Xóa danh mục thành công!" });
+  } catch (error) {
+    console.log("Lỗi khi gọi deletePatch", error);
     res.status(500).json({ message: "Lỗi hệ thống!" });
   }
 };

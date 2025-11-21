@@ -26,4 +26,10 @@ router.patch(
   categoryController.editPatch
 );
 
+router.patch(
+  "/delete/:id",
+  upload.single("avatar"),
+  categoryController.deletePatch
+);
+
 export default router;
