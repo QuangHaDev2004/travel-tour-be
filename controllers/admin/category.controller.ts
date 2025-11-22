@@ -4,6 +4,7 @@ import { AccountRequest } from "../../interfaces/resquest.interface";
 import slugify from "slugify";
 import * as categoryHelper from "../../helpers/category.helper";
 import AccountAdmin from "../../models/account-admin.model";
+import moment from "moment";
 
 export const createPost = async (req: AccountRequest, res: Response) => {
   try {
@@ -31,9 +32,35 @@ export const createPost = async (req: AccountRequest, res: Response) => {
 
 export const list = async (req: AccountRequest, res: Response) => {
   try {
-    const categoryList = await Category.find({
+    const find: any = {
       deleted: false,
-    }).sort({
+    };
+
+    // Lọc theo trạng thái
+    if (req.query.status) {
+      find.status = req.query.status;
+    }
+
+    // Lọc theo người tạo
+    if (req.query.createdBy) {
+      find.createdBy = req.query.createdBy;
+    }
+
+    // Lọc theo ngày tạo
+    const dateFilter: any = {};
+    if (req.query.startDate) {
+      const startDate = moment(`${req.query.startDate}`).toDate();
+      dateFilter.$gte = startDate;
+    }
+    if (req.query.endDate) {
+      const endDate = moment(`${req.query.endDate}`).endOf("day").toDate();
+      dateFilter.$lte = endDate;
+    }
+    if (Object.keys(dateFilter).length > 0) {
+      find.createdAt = dateFilter;
+    }
+
+    const categoryList = await Category.find(find).sort({
       position: "desc",
     });
 
@@ -60,15 +87,27 @@ export const list = async (req: AccountRequest, res: Response) => {
       if (infoAccount) {
         itemFinal.createdByFullName = infoAccount.fullName as string;
         itemFinal.updatedByFullName = infoAccount.fullName as string;
-
-        dataFinal.push(itemFinal);
       }
+
+      dataFinal.push(itemFinal);
+    }
+
+    const accountAdminList = await AccountAdmin.find({});
+    const accountListFinal = [];
+    for (const item of accountAdminList) {
+      const itemFinal = {
+        id: item.id,
+        fullName: item.fullName,
+      };
+
+      accountListFinal.push(itemFinal);
     }
 
     res.status(200).json({
       message: "Danh sách danh mục!",
       categoryTree: categoryTree,
       categoryList: dataFinal,
+      accountAdminList: accountListFinal,
     });
   } catch (error) {
     console.log("Lỗi khi gọi list", error);
