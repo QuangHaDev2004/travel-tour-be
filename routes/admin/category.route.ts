@@ -32,4 +32,6 @@ router.patch(
   categoryController.deletePatch
 );
 
+router.patch("/change-multi/", categoryController.changeMultiPatch);
+
 export default router;
