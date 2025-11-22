@@ -60,6 +60,13 @@ export const list = async (req: AccountRequest, res: Response) => {
       find.createdAt = dateFilter;
     }
 
+    // Tìm kiếm
+    if (req.query.keyword) {
+      const keyword = slugify(`${req.query.keyword}`);
+      const keywordRegex = new RegExp(keyword, "i");
+      find.slug = keywordRegex;
+    }
+
     const categoryList = await Category.find(find).sort({
       position: "desc",
     });
