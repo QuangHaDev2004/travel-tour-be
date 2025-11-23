@@ -89,7 +89,12 @@ export const list = async (req: AccountRequest, res: Response) => {
       .limit(limitItem)
       .skip(skip);
 
-    const categoryTree = categoryHelper.buildCategoryTree(categoryList, "");
+    const fullCategoryList = await Category.find({
+      deleted: false,
+    }).sort({
+      createdAt: "desc",
+    });
+    const categoryTree = categoryHelper.buildCategoryTree(fullCategoryList, "");
 
     const dataFinal = [];
     for (const item of categoryList) {
