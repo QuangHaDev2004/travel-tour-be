@@ -22,4 +22,6 @@ router.get("/website-info", settingController.websiteInfo);
 
 router.post("/role/create", settingController.roleCreatePost);
 
+router.get("/role/list", settingController.roleList);
+
 export default router;

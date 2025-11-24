@@ -105,10 +105,39 @@ export const roleCreatePost = async (req: AccountRequest, res: Response) => {
     await newRecord.save();
 
     res.status(201).json({
-      message: "Tạo nhóm quyền thành công",
+      message: "Tạo nhóm quyền thành công!",
     });
   } catch (error) {
     console.log("Lỗi khi gọi roleCreatePost", error);
+    res.status(500).json({ message: "Lỗi hệ thống!" });
+  }
+};
+
+export const roleList = async (req: AccountRequest, res: Response) => {
+  try {
+    const roleList = await Role.find({
+      deleted: false,
+    }).sort({
+      createdAt: "desc",
+    });
+
+    const dataFinal = [];
+    for (const item of roleList) {
+      const itemFinal = {
+        id: item.id,
+        name: item.name,
+        description: item.description,
+      };
+
+      dataFinal.push(itemFinal);
+    }
+
+    res.status(200).json({
+      message: "Danh sách nhóm quyền!",
+      roleList: dataFinal,
+    });
+  } catch (error) {
+    console.log("Lỗi khi gọi roleList", error);
     res.status(500).json({ message: "Lỗi hệ thống!" });
   }
 };
