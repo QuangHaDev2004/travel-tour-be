@@ -141,3 +141,63 @@ export const roleList = async (req: AccountRequest, res: Response) => {
     res.status(500).json({ message: "Lỗi hệ thống!" });
   }
 };
+
+export const roleEdit = async (req: AccountRequest, res: Response) => {
+  try {
+    const id = req.params.id;
+
+    const roleDetail = await Role.findOne({
+      _id: id,
+      deleted: false,
+    });
+
+    if (!roleDetail) {
+      return res.status(404).json({ message: "Nhóm quyền không tồn tại!" });
+    }
+
+    const dataFinal = {
+      name: roleDetail.name,
+      description: roleDetail.description,
+      permissions: roleDetail.permissions,
+    };
+
+    res.status(200).json({
+      message: "Chi tiết nhóm quyền!",
+      roleDetail: dataFinal,
+    });
+  } catch (error) {
+    console.log("Lỗi khi gọi roleEdit", error);
+    res.status(500).json({ message: "Lỗi hệ thống!" });
+  }
+};
+
+export const roleEditPatch = async (req: AccountRequest, res: Response) => {
+  try {
+    const id = req.params.id;
+
+    const roleDetail = await Role.findOne({
+      _id: id,
+      deleted: false,
+    });
+
+    if (!roleDetail) {
+      return res.status(404).json({ message: "Nhóm quyền không tồn tại!" });
+    }
+
+    req.body.updatedBy = req.account.id;
+    req.body.slug = slugify(req.body.name, { lower: true });
+
+    await Role.updateOne(
+      {
+        _id: id,
+        deleted: false,
+      },
+      req.body
+    );
+
+    res.status(200).json({ message: "Cập nhật nhóm quyền thành công!" });
+  } catch (error) {
+    console.log("Lỗi khi gọi roleEdit", error);
+    res.status(500).json({ message: "Lỗi hệ thống!" });
+  }
+};
