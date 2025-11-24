@@ -1,6 +1,9 @@
 import { Request, Response } from "express";
 import AccountAdmin from "../../models/account-admin.model";
 import SettingWebsiteInfo from "../../models/setting-website-info.model";
+import { AccountRequest } from "../../interfaces/resquest.interface";
+import slugify from "slugify";
+import Role from "../../models/role.model";
 
 export const accountAdminList = async (req: Request, res: Response) => {
   try {
@@ -88,6 +91,24 @@ export const websiteInfo = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.log("Lỗi khi gọi websiteInfo", error);
+    res.status(500).json({ message: "Lỗi hệ thống!" });
+  }
+};
+
+export const roleCreatePost = async (req: AccountRequest, res: Response) => {
+  try {
+    req.body.createdBy = req.account.id;
+    req.body.updatedBy = req.account.id;
+    req.body.slug = slugify(req.body.name, { lower: true });
+
+    const newRecord = new Role(req.body);
+    await newRecord.save();
+
+    res.status(201).json({
+      message: "Tạo nhóm quyền thành công",
+    });
+  } catch (error) {
+    console.log("Lỗi khi gọi roleCreatePost", error);
     res.status(500).json({ message: "Lỗi hệ thống!" });
   }
 };
