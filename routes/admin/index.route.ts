@@ -5,6 +5,7 @@ import authRoutes from "./auth.route";
 import categoryRoutes from "./category.route";
 import cityRoutes from "./city.route";
 import tourRoutes from "./tour.route";
+import settingRoutes from "./setting.route";
 import * as authMiddleware from "../../middlewares/admin/auth.middleware";
 
 const router = Router();
@@ -20,5 +21,7 @@ router.use("/category", authMiddleware.verifyToken, categoryRoutes);
 router.use("/city", cityRoutes);
 
 router.use("/tour", authMiddleware.verifyToken, tourRoutes);
+
+router.use("/setting", authMiddleware.verifyToken, settingRoutes);
 
 export default router;
