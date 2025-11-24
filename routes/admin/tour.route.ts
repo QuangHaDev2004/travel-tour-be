@@ -17,9 +17,17 @@ router.post(
 
 router.get("/list", tourController.list);
 
+router.get("/edit/:id", tourController.edit);
+
+router.patch(
+  "/edit/:id",
+  upload.single("avatar"),
+  tourValidate.createPost,
+  tourController.editPatch
+);
+
 router.patch("/delete/:id", tourController.deletePatch);
 
 router.patch("/change-multi", tourController.changeMultiPatch);
-
 
 export default router;
