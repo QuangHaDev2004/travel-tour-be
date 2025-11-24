@@ -15,4 +15,8 @@ router.post(
   tourController.createPost
 );
 
+router.get("/list", tourController.list);
+
+router.patch("/change-multi/", tourController.changeMultiPatch);
+
 export default router;

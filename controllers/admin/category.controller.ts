@@ -110,13 +110,20 @@ export const list = async (req: AccountRequest, res: Response) => {
         updatedByFullName: "",
       };
 
-      const infoAccount = await AccountAdmin.findOne({
-        _id: item.createdBy,
-      });
+      if (item.createdBy) {
+        const infoAccount = await AccountAdmin.findOne({
+          _id: item.createdBy,
+        });
 
-      if (infoAccount) {
-        itemFinal.createdByFullName = infoAccount.fullName as string;
-        itemFinal.updatedByFullName = infoAccount.fullName as string;
+        itemFinal.createdByFullName = infoAccount?.fullName as string;
+      }
+
+      if (item.updatedBy) {
+        const infoAccount = await AccountAdmin.findOne({
+          _id: item.updatedBy,
+        });
+
+        itemFinal.updatedByFullName = infoAccount?.fullName as string;
       }
 
       dataFinal.push(itemFinal);

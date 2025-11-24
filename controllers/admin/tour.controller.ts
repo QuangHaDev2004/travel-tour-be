@@ -4,6 +4,8 @@ import { AccountRequest } from "../../interfaces/resquest.interface";
 import slugify from "slugify";
 import { generateRandomNumber } from "../../helpers/generate.helper";
 import { formatDateDDMMYY } from "../../helpers/date.helper";
+import moment from "moment";
+import AccountAdmin from "../../models/account-admin.model";
 
 export const createPost = async (req: AccountRequest, res: Response) => {
   try {
@@ -68,6 +70,155 @@ export const createPost = async (req: AccountRequest, res: Response) => {
     res.status(201).json({ message: "Tạo tour thành công!" });
   } catch (error) {
     console.log("Lỗi khi gọi createPost", error);
+    res.status(500).json({ message: "Lỗi hệ thống!" });
+  }
+};
+
+export const list = async (req: AccountRequest, res: Response) => {
+  try {
+    const find: any = {
+      deleted: false,
+    };
+
+    // Lọc theo trạng thái
+    if (req.query.status) {
+      find.status = req.query.status;
+    }
+
+    // Lọc theo người tạo
+    if (req.query.createdBy) {
+      find.createdBy = req.query.createdBy;
+    }
+
+    // Lọc theo ngày tạo
+    const dateFilter: any = {};
+    if (req.query.startDate) {
+      const startDate = moment(`${req.query.startDate}`).toDate();
+      dateFilter.$gte = startDate;
+    }
+    if (req.query.endDate) {
+      const endDate = moment(`${req.query.endDate}`).endOf("day").toDate();
+      dateFilter.$lte = endDate;
+    }
+    if (Object.keys(dateFilter).length > 0) {
+      find.createdAt = dateFilter;
+    }
+
+    // Tìm kiếm
+    if (req.query.keyword) {
+      const keyword = slugify(`${req.query.keyword}`);
+      const keywordRegex = new RegExp(keyword, "i");
+      find.slug = keywordRegex;
+    }
+
+    // Phân trang
+    const limitItem = 4;
+    let page = 1;
+    if (req.query.page && parseInt(`${req.query.page}`) > 0) {
+      page = parseInt(`${req.query.page}`);
+    }
+    const skip = (page - 1) * limitItem;
+    const totalRecord = await Tour.countDocuments(find);
+    const totalPage = Math.ceil(totalRecord / limitItem);
+    const pagination = {
+      skip: skip,
+      totalRecord: totalRecord,
+      totalPage: totalPage,
+    };
+
+    const tourList = await Tour.find(find)
+      .sort({
+        position: "desc",
+      })
+      .limit(limitItem)
+      .skip(skip);
+
+    const dataFinal = [];
+    for (const item of tourList) {
+      const itemFinal = {
+        id: item.id,
+        name: item.name,
+        avatar: item.avatar,
+        priceNewAdult: item.priceNewAdult,
+        priceNewChildren: item.priceNewChildren,
+        priceNewBaby: item.priceNewBaby,
+        stockAdult: item.stockAdult,
+        stockChildren: item.stockChildren,
+        stockBaby: item.stockBaby,
+        position: item.position,
+        status: item.status,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+        createdByFullName: "",
+        updatedByFullName: "",
+      };
+
+      if (item.createdBy) {
+        const infoAccount = await AccountAdmin.findOne({
+          _id: item.createdBy,
+        });
+
+        itemFinal.createdByFullName = infoAccount?.fullName as string;
+      }
+
+      if (item.updatedBy) {
+        const infoAccount = await AccountAdmin.findOne({
+          _id: item.updatedBy,
+        });
+
+        itemFinal.updatedByFullName = infoAccount?.fullName as string;
+      }
+
+      dataFinal.push(itemFinal);
+    }
+
+    res.status(200).json({
+      message: "Danh sách tour!",
+      tourList: dataFinal,
+      pagination,
+    });
+  } catch (error) {
+    console.log("Lỗi khi gọi list", error);
+    res.status(500).json({ message: "Lỗi hệ thống!" });
+  }
+};
+
+export const changeMultiPatch = async (req: AccountRequest, res: Response) => {
+  try {
+    const { action, ids } = req.body;
+
+    switch (action) {
+      case "active":
+      case "inactive":
+        await Tour.updateMany(
+          {
+            _id: { $in: ids },
+          },
+          {
+            status: action,
+          }
+        );
+        res.status(200).json({ message: "Cập nhật trạng thái thành công!" });
+        break;
+      case "delete":
+        await Tour.updateMany(
+          {
+            _id: { $in: ids },
+          },
+          {
+            deleted: true,
+            deletedBy: req.account.id,
+            deletedAt: Date.now(),
+          }
+        );
+        res.status(200).json({ message: "Xóa danh mục thành công!" });
+        break;
+      default:
+        res.status(400).json({ message: "Hành động không hợp lệ!" });
+        break;
+    }
+  } catch (error) {
+    console.log("Lỗi khi gọi changeMultiPatch", error);
     res.status(500).json({ message: "Lỗi hệ thống!" });
   }
 };
