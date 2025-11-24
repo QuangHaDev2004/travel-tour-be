@@ -20,4 +20,6 @@ router.patch(
 
 router.get("/website-info", settingController.websiteInfo);
 
+router.post("/role/create", settingController.roleCreatePost);
+
 export default router;
