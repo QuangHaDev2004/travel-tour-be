@@ -26,12 +26,8 @@ router.patch(
   categoryController.editPatch
 );
 
-router.patch(
-  "/delete/:id",
-  upload.single("avatar"),
-  categoryController.deletePatch
-);
+router.patch("/delete/:id", categoryController.deletePatch);
 
-router.patch("/change-multi/", categoryController.changeMultiPatch);
+router.patch("/change-multi", categoryController.changeMultiPatch);
 
 export default router;

@@ -17,6 +17,9 @@ router.post(
 
 router.get("/list", tourController.list);
 
-router.patch("/change-multi/", tourController.changeMultiPatch);
+router.patch("/delete/:id", tourController.deletePatch);
+
+router.patch("/change-multi", tourController.changeMultiPatch);
+
 
 export default router;
