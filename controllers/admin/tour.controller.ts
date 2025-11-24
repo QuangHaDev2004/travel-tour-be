@@ -352,6 +352,7 @@ export const changeMultiPatch = async (req: AccountRequest, res: Response) => {
             status: action,
           }
         );
+
         res.status(200).json({ message: "Cập nhật trạng thái thành công!" });
         break;
       case "delete":
@@ -365,7 +366,25 @@ export const changeMultiPatch = async (req: AccountRequest, res: Response) => {
             deletedAt: Date.now(),
           }
         );
+
         res.status(200).json({ message: "Xóa tour thành công!" });
+        break;
+      case "undo":
+        await Tour.updateMany(
+          {
+            _id: { $in: ids },
+          },
+          {
+            deleted: false,
+          }
+        );
+
+        res.status(200).json({ message: "Khôi phục tour thành công!" });
+        break;
+      case "destroy":
+        await Tour.deleteMany({ _id: { $in: ids } });
+
+        res.status(200).json({ message: "Xóa vĩnh viễn tour thành công!" });
         break;
       default:
         res.status(400).json({ message: "Hành động không hợp lệ!" });
@@ -373,6 +392,148 @@ export const changeMultiPatch = async (req: AccountRequest, res: Response) => {
     }
   } catch (error) {
     console.log("Lỗi khi gọi changeMultiPatch", error);
+    res.status(500).json({ message: "Lỗi hệ thống!" });
+  }
+};
+
+export const trash = async (req: AccountRequest, res: Response) => {
+  try {
+    const find: any = {
+      deleted: true,
+    };
+
+    // Lọc theo trạng thái
+    if (req.query.status) {
+      find.status = req.query.status;
+    }
+
+    // Lọc theo người tạo
+    if (req.query.createdBy) {
+      find.createdBy = req.query.createdBy;
+    }
+
+    // Lọc theo ngày tạo
+    const dateFilter: any = {};
+    if (req.query.startDate) {
+      const startDate = moment(`${req.query.startDate}`).toDate();
+      dateFilter.$gte = startDate;
+    }
+    if (req.query.endDate) {
+      const endDate = moment(`${req.query.endDate}`).endOf("day").toDate();
+      dateFilter.$lte = endDate;
+    }
+    if (Object.keys(dateFilter).length > 0) {
+      find.createdAt = dateFilter;
+    }
+
+    // Tìm kiếm
+    if (req.query.keyword) {
+      const keyword = slugify(`${req.query.keyword}`);
+      const keywordRegex = new RegExp(keyword, "i");
+      find.slug = keywordRegex;
+    }
+
+    // Phân trang
+    const limitItem = 4;
+    let page = 1;
+    if (req.query.page && parseInt(`${req.query.page}`) > 0) {
+      page = parseInt(`${req.query.page}`);
+    }
+    const skip = (page - 1) * limitItem;
+    const totalRecord = await Tour.countDocuments(find);
+    const totalPage = Math.ceil(totalRecord / limitItem);
+    const pagination = {
+      skip: skip,
+      totalRecord: totalRecord,
+      totalPage: totalPage,
+    };
+
+    const tourList = await Tour.find(find)
+      .sort({
+        position: "desc",
+      })
+      .limit(limitItem)
+      .skip(skip);
+
+    const dataFinal = [];
+    for (const item of tourList) {
+      const itemFinal = {
+        id: item.id,
+        name: item.name,
+        avatar: item.avatar,
+        priceNewAdult: item.priceNewAdult,
+        priceNewChildren: item.priceNewChildren,
+        priceNewBaby: item.priceNewBaby,
+        stockAdult: item.stockAdult,
+        stockChildren: item.stockChildren,
+        stockBaby: item.stockBaby,
+        position: item.position,
+        status: item.status,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+        createdByFullName: "",
+        updatedByFullName: "",
+      };
+
+      if (item.createdBy) {
+        const infoAccount = await AccountAdmin.findOne({
+          _id: item.createdBy,
+        });
+
+        itemFinal.createdByFullName = infoAccount?.fullName as string;
+      }
+
+      if (item.updatedBy) {
+        const infoAccount = await AccountAdmin.findOne({
+          _id: item.updatedBy,
+        });
+
+        itemFinal.updatedByFullName = infoAccount?.fullName as string;
+      }
+
+      dataFinal.push(itemFinal);
+    }
+
+    res.status(200).json({
+      message: "Danh sách tour trash!",
+      tourTrashList: dataFinal,
+      pagination,
+    });
+  } catch (error) {
+    console.log("Lỗi khi gọi trash", error);
+    res.status(500).json({ message: "Lỗi hệ thống!" });
+  }
+};
+
+export const undoPatch = async (req: AccountRequest, res: Response) => {
+  try {
+    const id = req.params.id;
+
+    await Tour.updateOne(
+      {
+        _id: id,
+      },
+      {
+        deleted: false,
+      }
+    );
+
+    res.status(200).json({ message: "Khôi phục tour thành công!" });
+  } catch (error) {
+    console.log("Lỗi khi gọi undoPatch", error);
+    res.status(500).json({ message: "Lỗi hệ thống!" });
+  }
+};
+
+export const destroyDelete = async (req: AccountRequest, res: Response) => {
+  try {
+    const id = req.params.id;
+
+    await Tour.deleteOne({ _id: id });
+
+    res.status(200).json({ message: "Xóa vĩnh viễn tour thành công!" });
+  } catch (error) {
+    console.log("Lỗi khi gọi destroyDelete", error);
     res.status(500).json({ message: "Lỗi hệ thống!" });
   }
 };

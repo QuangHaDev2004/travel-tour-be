@@ -30,4 +30,10 @@ router.patch("/delete/:id", tourController.deletePatch);
 
 router.patch("/change-multi", tourController.changeMultiPatch);
 
+router.get("/trash/list", tourController.trash);
+
+router.patch("/undo/:id", tourController.undoPatch);
+
+router.delete("/destroy/:id", tourController.destroyDelete);
+
 export default router;
