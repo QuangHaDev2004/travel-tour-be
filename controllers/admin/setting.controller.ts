@@ -4,6 +4,7 @@ import SettingWebsiteInfo from "../../models/setting-website-info.model";
 import { AccountRequest } from "../../interfaces/resquest.interface";
 import slugify from "slugify";
 import Role from "../../models/role.model";
+import bcrypt from "bcryptjs";
 
 export const accountAdminList = async (req: Request, res: Response) => {
   try {
@@ -24,6 +25,39 @@ export const accountAdminList = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.log("Lỗi khi gọi accountAdminList", error);
+    res.status(500).json({ message: "Lỗi hệ thống!" });
+  }
+};
+
+export const accountAdminCreate = async (
+  req: AccountRequest,
+  res: Response
+) => {
+  try {
+    const existAccount = await AccountAdmin.findOne({
+      email: req.body.email,
+    });
+
+    if (existAccount) {
+      return res.status(409).json({
+        message: "Email đã tồn tại trong hệ thống!",
+      });
+    }
+
+    req.body.createdBy = req.account.id;
+    req.body.updatedBy = req.account.id;
+    req.body.slug = slugify(req.body.email, { lower: true });
+    req.body.avatar = req.file ? req.file.path : "";
+
+    const salt = await bcrypt.genSalt(10);
+    req.body.password = await bcrypt.hash(req.body.password, salt);
+
+    const newRecord = new AccountAdmin(req.body);
+    await newRecord.save();
+
+    res.status(201).json({ message: "Tạo tài khoản quản trị thành công!" });
+  } catch (error) {
+    console.log("Lỗi khi gọi accountAdminCreate", error);
     res.status(500).json({ message: "Lỗi hệ thống!" });
   }
 };

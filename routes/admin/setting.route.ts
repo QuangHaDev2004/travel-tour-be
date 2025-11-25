@@ -9,6 +9,12 @@ const upload = multer({ storage: storage });
 
 router.get("/account-admin/list", settingController.accountAdminList);
 
+router.post(
+  "/account-admin/create",
+  upload.single("avatar"),
+  settingController.accountAdminCreate
+);
+
 router.patch(
   "/website-info",
   upload.fields([
