@@ -8,6 +8,36 @@ import bcrypt from "bcryptjs";
 
 export const accountAdminList = async (req: Request, res: Response) => {
   try {
+    const accountAdminList = await AccountAdmin.find({
+      deleted: false,
+    }).sort({
+      createdAt: "desc",
+    });
+
+    const dataFinal = [];
+    for (const item of accountAdminList) {
+      const itemFinal = {
+        id: item.id,
+        fullName: item.fullName,
+        avatar: item.avatar,
+        email: item.email,
+        phone: item.phone,
+        roleName: "",
+        positionCompany: item.positionCompany,
+        status: item.status,
+      };
+
+      if (item.role) {
+        const roleInfo = await Role.findOne({
+          _id: item.role,
+        });
+
+        itemFinal.roleName = roleInfo?.name as string;
+      }
+
+      dataFinal.push(itemFinal);
+    }
+
     const fullAccountAdminList = await AccountAdmin.find({});
     const fullAccountListFinal = [];
     for (const item of fullAccountAdminList) {
@@ -22,6 +52,7 @@ export const accountAdminList = async (req: Request, res: Response) => {
     res.status(200).json({
       message: "Danh sách tài khoản quản trị!",
       fullAccountAdminList: fullAccountListFinal,
+      accountAdminList: dataFinal,
     });
   } catch (error) {
     console.log("Lỗi khi gọi accountAdminList", error);
@@ -29,7 +60,7 @@ export const accountAdminList = async (req: Request, res: Response) => {
   }
 };
 
-export const accountAdminCreate = async (
+export const accountAdminCreatePost = async (
   req: AccountRequest,
   res: Response
 ) => {
@@ -58,6 +89,103 @@ export const accountAdminCreate = async (
     res.status(201).json({ message: "Tạo tài khoản quản trị thành công!" });
   } catch (error) {
     console.log("Lỗi khi gọi accountAdminCreate", error);
+    res.status(500).json({ message: "Lỗi hệ thống!" });
+  }
+};
+
+export const accountAdminEdit = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id;
+
+    const accountAdminDetail = await AccountAdmin.findOne({
+      _id: id,
+      deleted: false,
+    });
+
+    if (!accountAdminDetail) {
+      return res.status(404).json({
+        message: "Tài khoản quản trị không tồn tại!",
+      });
+    }
+
+    const dataFinal = {
+      id: accountAdminDetail.id,
+      fullName: accountAdminDetail.fullName,
+      email: accountAdminDetail.email,
+      phone: accountAdminDetail.phone,
+      role: accountAdminDetail.role,
+      positionCompany: accountAdminDetail.positionCompany,
+      status: accountAdminDetail.status,
+      avatar: accountAdminDetail.avatar,
+    };
+
+    res.status(200).json({
+      message: "Chi tiết tài khoản quản trị!",
+      accountAdminDetail: dataFinal,
+    });
+  } catch (error) {
+    console.log("Lỗi khi gọi accountAdminEdit", error);
+    res.status(500).json({ message: "Lỗi hệ thống!" });
+  }
+};
+
+export const accountAdminEditPatch = async (
+  req: AccountRequest,
+  res: Response
+) => {
+  try {
+    const id = req.params.id;
+
+    const accountAdminDetail = await AccountAdmin.findOne({
+      _id: id,
+      deleted: false,
+    });
+
+    if (!accountAdminDetail) {
+      return res.status(404).json({
+        message: "Tài khoản quản trị không tồn tại!",
+      });
+    }
+
+    const existEmail = await AccountAdmin.findOne({
+      _id: { $ne: id }, // loại trừ chính tài khoản đang cập nhật
+      email: req.body.email,
+    });
+
+    if (existEmail) {
+      return res.status(409).json({
+        message: "Email đã tồn tại trong hệ thống!",
+      });
+    }
+
+    if (req.body.password) {
+      const salt = await bcrypt.genSalt(10);
+      req.body.password = await bcrypt.hash(req.body.password, salt);
+    } else {
+      delete req.body.password;
+    }
+
+    req.body.updatedBy = req.account.id;
+    req.body.slug = slugify(req.body.email, { lower: true });
+    if (req.file) {
+      req.body.avatar = req.file.path;
+    } else {
+      delete req.body.avatar;
+    }
+
+    await AccountAdmin.updateOne(
+      {
+        _id: id,
+        deleted: false,
+      },
+      req.body
+    );
+
+    res.status(200).json({
+      message: "Cập nhật tài khoản quản trị thành công!",
+    });
+  } catch (error) {
+    console.log("Lỗi khi gọi accountAdminEditPatch", error);
     res.status(500).json({ message: "Lỗi hệ thống!" });
   }
 };
