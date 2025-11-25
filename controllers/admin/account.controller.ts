@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import Session from "../../models/session.model";
 import { AccountRequest } from "../../interfaces/resquest.interface";
+import Role from "../../models/role.model";
 
 const ACCESS_TOKEN_TTL = "15m";
 const REFRESH_TOKEN_TTL = 24 * 60 * 60 * 1000;
@@ -123,11 +124,23 @@ export const logout = async (req: Request, res: Response) => {
 
 export const authMe = async (req: AccountRequest, res: Response) => {
   try {
-    const account = req.account;
+    const dataFinal = {
+      fullName: req.account.fullName,
+      avatar: req.account.avatar,
+      roleName: "",
+      permissions: [] as string[],
+    };
 
-    return res.status(200).json({
-      account,
-    });
+    if (req.account.role) {
+      const roleInfo = await Role.findOne({
+        _id: req.account.role,
+      });
+
+      dataFinal.roleName = roleInfo?.name as string;
+      dataFinal.permissions = roleInfo?.permissions ?? [];
+    }
+
+    return res.status(200).json({ account: dataFinal });
   } catch (error) {
     console.error("Lỗi khi gọi authMe", error);
     return res.status(500).json({ message: "Lỗi hệ thống" });

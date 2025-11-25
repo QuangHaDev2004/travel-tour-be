@@ -15,4 +15,6 @@ router.patch(
   profileController.profileEditPatch
 );
 
+router.patch("/change-password", profileController.profileChangePasswordPatch);
+
 export default router;

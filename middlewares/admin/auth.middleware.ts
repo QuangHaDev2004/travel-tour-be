@@ -3,6 +3,7 @@ import AccountAdmin from "../../models/account-admin.model";
 import { JwtPayloadCustom } from "../../types/jwt-payload";
 import { AccountRequest } from "../../interfaces/resquest.interface";
 import jwt from "jsonwebtoken";
+import Role from "../../models/role.model";
 
 export const verifyToken = (
   req: AccountRequest,
@@ -36,6 +37,17 @@ export const verifyToken = (
 
         if (!account) {
           return res.status(404).json({ message: "Người dùng không tồn tại!" });
+        }
+
+        if (account.role) {
+          const roleInfo = await Role.findOne({
+            _id: account.role,
+          });
+
+          if (roleInfo) {
+            (account as any).roleName = roleInfo.name;
+            req.permissions = roleInfo.permissions;
+          }
         }
 
         req.account = account;

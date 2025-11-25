@@ -9,6 +9,10 @@ import AccountAdmin from "../../models/account-admin.model";
 
 export const createPost = async (req: AccountRequest, res: Response) => {
   try {
+    if (!req.permissions.includes("tour-create")) {
+      return res.status(403).json({ message: "Không có quyền!" });
+    }
+
     req.body.tourCode = `NQHTOUR-${generateRandomNumber(6)}-${formatDateDDMMYY(
       new Date()
     )}`;

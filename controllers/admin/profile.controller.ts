@@ -3,6 +3,7 @@ import { AccountRequest } from "../../interfaces/resquest.interface";
 import Role from "../../models/role.model";
 import AccountAdmin from "../../models/account-admin.model";
 import slugify from "slugify";
+import bcrypt from "bcryptjs";
 
 export const profileEdit = async (req: AccountRequest, res: Response) => {
   try {
@@ -69,12 +70,51 @@ export const profileEditPatch = async (req: AccountRequest, res: Response) => {
       deleted: false,
     });
 
+    const dataFinal = {
+      fullName: account?.fullName,
+      avatar: account?.avatar,
+      roleName: "",
+    };
+
+    if (account?.role) {
+      const roleInfo = await Role.findOne({
+        _id: account?.role,
+      });
+
+      dataFinal.roleName = roleInfo?.name as string;
+    }
+
     res.status(200).json({
       message: "Cập nhật thông tin cá nhân thành công!",
-      account,
+      account: dataFinal,
     });
   } catch (error) {
     console.log("Lỗi khi gọi profileEditPatch", error);
+    res.status(500).json({ message: "Lỗi hệ thống!" });
+  }
+};
+
+export const profileChangePasswordPatch = async (
+  req: AccountRequest,
+  res: Response
+) => {
+  try {
+    const id = req.account.id;
+
+    const salt = await bcrypt.genSalt(10);
+    req.body.password = await bcrypt.hash(req.body.password, salt);
+
+    await AccountAdmin.updateOne(
+      {
+        _id: id,
+        deleted: false,
+      },
+      req.body
+    );
+
+    res.status(200).json({ message: "Đổi mật khẩu thành công!" });
+  } catch (error) {
+    console.log("Lỗi khi gọi profileChangePasswordPatch", error);
     res.status(500).json({ message: "Lỗi hệ thống!" });
   }
 };
