@@ -7,6 +7,7 @@ dotenv.config();
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import adminRoutes from "./routes/admin/index.route";
+import clientRoutes from "./routes/client/index.route";
 import { connectDB } from "./config/database.config";
 
 const app = express();
@@ -33,6 +34,7 @@ app.use(cookieParser());
 
 // Thiết lập đường dẫn
 app.use("/admin", adminRoutes);
+app.use("/", clientRoutes);
 
 app.listen(port, () => {
   console.log(`Website đang chạy trên cổng ${port}`);
