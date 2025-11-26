@@ -7,4 +7,6 @@ router.get("/website-info", homeController.websiteInfo);
 
 router.get("/category", homeController.category);
 
+router.get("/deal", homeController.deal);
+
 export default router;
