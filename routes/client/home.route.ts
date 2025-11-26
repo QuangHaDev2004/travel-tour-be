@@ -9,4 +9,6 @@ router.get("/category", homeController.category);
 
 router.get("/deal", homeController.deal);
 
+router.get("/tour/list", homeController.list);
+
 export default router;
