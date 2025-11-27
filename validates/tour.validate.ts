@@ -30,7 +30,7 @@ export const createPost = async (
     departureDate: Joi.string().allow(""),
     information: Joi.string().allow(""),
     schedules: Joi.string().allow(""),
-    images: Joi.string().allow(""),
+    images: Joi.array().allow(""),
   });
 
   const { error } = schema.validate(req.body);

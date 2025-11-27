@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import Tour from "../../models/tour.model";
 import Category from "../../models/category.model";
+import City from "../../models/city.model";
+import moment from "moment";
 
 export const detail = async (req: Request, res: Response) => {
   try {
@@ -47,7 +49,34 @@ export const detail = async (req: Request, res: Response) => {
     const dataFinal = {
       id: tourDetail.id,
       images: tourDetail.images,
+      avatar: tourDetail.avatar,
+      name: tourDetail.name,
+      tourCode: tourDetail.tourCode,
+      time: tourDetail.time,
+      vehicle: tourDetail.vehicle,
+      stockAdult: tourDetail.stockAdult,
+      stockChildren: tourDetail.stockChildren,
+      stockBaby: tourDetail.stockBaby,
+      priceNewAdult: tourDetail.priceNewAdult,
+      priceNewChildren: tourDetail.priceNewChildren,
+      priceNewBaby: tourDetail.priceNewBaby,
+      information: tourDetail.information,
+      schedules: tourDetail.schedules,
+      locationsFromName: [],
+      departureDateFormat: "",
     };
+
+    if (tourDetail.locationsFrom.length > 0) {
+      dataFinal.locationsFromName = await City.find({
+        _id: { $in: tourDetail.locationsFrom },
+      });
+    }
+
+    if (tourDetail.departureDate) {
+      dataFinal.departureDateFormat = moment(tourDetail.departureDate).format(
+        "DD/MM/YYYY"
+      );
+    }
 
     res.status(200).json({
       message: "Chi tiết tour!",
