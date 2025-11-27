@@ -63,10 +63,30 @@ export const createPost = async (req: AccountRequest, res: Response) => {
       ? JSON.parse(req.body.schedules)
       : [];
 
-    req.body.slug = slugify(req.body.name, { lower: true });
+    req.body.slug = slugify(req.body.name, {
+      lower: true,
+      strict: true,
+      locale: "vi",
+    });
     req.body.createdBy = req.account.id;
     req.body.updatedBy = req.account.id;
-    req.body.avatar = req.file ? req.file.path : "";
+
+    // Process Image
+    const files = req.files as any;
+
+    if (files && files.avatar && files.avatar.length > 0) {
+      req.body.avatar = files.avatar[0].path;
+    } else {
+      req.body.avatar = "";
+    }
+
+    if (files && files.images && files.images.length > 0) {
+      req.body.images = files.images.map((item: any) => item.path);
+    } else {
+      req.body.images = [];
+    }
+
+    // req.body.avatar = req.file ? req.file.path : "";
 
     const newRecord = new Tour(req.body);
     await newRecord.save();
@@ -203,6 +223,7 @@ export const edit = async (req: AccountRequest, res: Response) => {
       position: tourDetail?.position,
       status: tourDetail?.status,
       avatar: tourDetail?.avatar,
+      images: tourDetail?.images,
       priceAdult: tourDetail?.priceAdult,
       priceChildren: tourDetail?.priceChildren,
       priceBaby: tourDetail?.priceBaby,
@@ -296,13 +317,39 @@ export const editPatch = async (req: AccountRequest, res: Response) => {
       ? JSON.parse(req.body.schedules)
       : [];
 
-    req.body.slug = slugify(req.body.name, { lower: true });
+    req.body.slug = slugify(req.body.name, {
+      lower: true,
+      strict: true,
+      locale: "vi",
+    });
     req.body.updatedBy = req.account.id;
-    if (req.file) {
-      req.body.avatar = req.file.path;
+
+    // Images Process
+    const files = req.files as any;
+
+    if (files && files.avatar && files.avatar.length > 0) {
+      req.body.avatar = files.avatar[0].path;
     } else {
       delete req.body.avatar;
     }
+
+    req.body.images = req.body.images
+      ? Array.isArray(req.body.images)
+        ? req.body.images
+        : [req.body.images]
+      : [];
+
+    if (files && files.images && files.images.length > 0) {
+      for (const file of files.images as any[]) {
+        req.body.images.push(file.path);
+      }
+    }
+
+    // if (req.file) {
+    //   req.body.avatar = req.file.path;
+    // } else {
+    //   delete req.body.avatar;
+    // }
 
     await Tour.updateOne(
       {
