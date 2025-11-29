@@ -10,6 +10,8 @@ import profileRoutes from "./profile.route";
 import templateRoutes from "./template.route";
 import contactRoutes from "./contact.route";
 import uploadRoutes from "./upload.route";
+import orderRoutes from "./order.route";
+
 import * as authMiddleware from "../../middlewares/admin/auth.middleware";
 
 const router = Router();
@@ -35,5 +37,7 @@ router.use("/template", authMiddleware.verifyToken, templateRoutes);
 router.use("/contact", authMiddleware.verifyToken, contactRoutes);
 
 router.use("/upload", uploadRoutes);
+
+router.use("/order", authMiddleware.verifyToken, orderRoutes);
 
 export default router;
