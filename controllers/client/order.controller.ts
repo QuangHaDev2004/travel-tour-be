@@ -2,6 +2,13 @@ import { Request, Response } from "express";
 import { generateRandomNumber } from "../../helpers/generate.helper";
 import Tour from "../../models/tour.model";
 import Order from "../../models/order.model";
+import City from "../../models/city.model";
+import moment from "moment";
+import {
+  paymentMethodList,
+  paymentStatusList,
+  statusList,
+} from "../../config/variable.config";
 
 export const createPost = async (req: Request, res: Response) => {
   try {
@@ -65,6 +72,114 @@ export const createPost = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.log("Có lỗi khi gọi order createPost", error);
+    res.status(500).json({ message: "Lỗi hệ thống!" });
+  }
+};
+
+export const success = async (req: Request, res: Response) => {
+  try {
+    const { orderCode, phone } = req.query;
+
+    const orderDetail = await Order.findOne({
+      orderCode: orderCode,
+      phone: phone,
+    });
+
+    if (!orderDetail) {
+      return res.status(404).json({ message: "Đơn hàng không tồn tại!" });
+    }
+
+    const dataFinal = {
+      orderCode: orderDetail.orderCode,
+      fullName: orderDetail.fullName,
+      phone: orderDetail.phone,
+      note: orderDetail.note,
+      subTotal: orderDetail.subTotal,
+      discount: orderDetail.discount,
+      total: orderDetail.total,
+      createdAtFormat: "",
+      paymentMethodName: "",
+      paymentStatusName: "",
+      statusName: "",
+      items: [] as any,
+    };
+
+    if (orderDetail.createdAt) {
+      dataFinal.createdAtFormat = moment(orderDetail.createdAt).format(
+        "HH:mm - DD/MM/YYYY"
+      );
+    }
+
+    if (orderDetail.paymentMethod) {
+      dataFinal.paymentMethodName =
+        paymentMethodList.find(
+          (item) => item.value === orderDetail.paymentMethod
+        )?.label ?? "";
+    }
+
+    if (orderDetail.paymentStatus) {
+      dataFinal.paymentStatusName =
+        paymentStatusList.find(
+          (item) => item.value === orderDetail.paymentStatus
+        )?.label ?? "";
+    }
+
+    if (orderDetail.status) {
+      dataFinal.statusName =
+        statusList.find((item) => item.value === orderDetail.status)?.label ??
+        "";
+    }
+
+    if (orderDetail.items && orderDetail.items.length > 0) {
+      for (const item of orderDetail.items) {
+        const itemFinal = {
+          tourId: item.tourId,
+          quantityAdult: item.quantityAdult,
+          quantityChildren: item.quantityChildren,
+          quantityBaby: item.quantityBaby,
+          priceNewAdult: item.priceNewAdult,
+          priceNewChildren: item.priceNewChildren,
+          priceNewBaby: item.priceNewBaby,
+          departureDateFormat: "",
+          avatar: "",
+          name: "",
+          slug: "",
+          locationsFromFormat: "",
+        };
+
+        if (item.departureDate) {
+          itemFinal.departureDateFormat = moment(item.departureDate).format(
+            "DD/MM/YYYY"
+          );
+        }
+
+        const tourInfo = await Tour.findOne({
+          _id: item.tourId,
+          deleted: false,
+          status: "active",
+        });
+
+        if (tourInfo) {
+          itemFinal.avatar = tourInfo.avatar as string;
+          itemFinal.name = tourInfo.name as string;
+          itemFinal.slug = tourInfo.slug as string;
+
+          // sửa lại nếu có chọn điểm khởi hành
+          const cityInfo = await City.find({
+            _id: { $in: tourInfo.locationsFrom },
+          });
+          itemFinal.locationsFromFormat = cityInfo
+            .map((item) => item.name)
+            .join(", ");
+        }
+
+        dataFinal.items.push(itemFinal);
+      }
+    }
+
+    res.status(200).json({ orderDetail: dataFinal });
+  } catch (error) {
+    console.log("Có lỗi khi gọi order success", error);
     res.status(500).json({ message: "Lỗi hệ thống!" });
   }
 };
