@@ -11,21 +11,24 @@ export const websiteInfo = async (req: Request, res: Response) => {
   try {
     const websiteInfo = await SettingWebsiteInfo.findOne({});
 
+    if (!websiteInfo) {
+      return res.status(404).json({
+        message: "Thông tin website không tồn tại!",
+      });
+    }
+
     const dataFinal = {
-      websiteName: websiteInfo?.websiteName,
-      phone: websiteInfo?.phone,
-      email: websiteInfo?.email,
-      address: websiteInfo?.address,
-      facebook: websiteInfo?.facebook,
-      zalo: websiteInfo?.zalo,
-      logo: websiteInfo?.logo,
-      favicon: websiteInfo?.favicon,
+      websiteName: websiteInfo.websiteName,
+      phone: websiteInfo.phone,
+      email: websiteInfo.email,
+      address: websiteInfo.address,
+      facebook: websiteInfo.facebook,
+      zalo: websiteInfo.zalo,
+      logo: websiteInfo.logo,
+      favicon: websiteInfo.favicon,
     };
 
-    res.status(200).json({
-      message: "Thông tin website!",
-      websiteInfo: dataFinal,
-    });
+    res.status(200).json({ websiteInfo: dataFinal });
   } catch (error) {
     console.log("Lỗi khi gọi websiteInfo", error);
     res.status(500).json({ message: "Lỗi hệ thống!" });
@@ -43,12 +46,9 @@ export const category = async (req: Request, res: Response) => {
 
     const categoryTree = categoryHelper.buildCategoryTree(categoryList, "");
 
-    res.status(200).json({
-      message: "Thông tin website!",
-      categoryList: categoryTree,
-    });
+    res.status(200).json({ categoryTree });
   } catch (error) {
-    console.log("Lỗi khi gọi category", error);
+    console.log("Lỗi khi gọi category tree", error);
     res.status(500).json({ message: "Lỗi hệ thống!" });
   }
 };
