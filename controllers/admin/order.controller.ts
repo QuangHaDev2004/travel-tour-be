@@ -13,6 +13,8 @@ export const list = async (req: Request, res: Response) => {
   try {
     const orderList = await Order.find({
       deleted: false,
+    }).sort({
+      createdAt: "desc",
     });
 
     const dataFinal = [];

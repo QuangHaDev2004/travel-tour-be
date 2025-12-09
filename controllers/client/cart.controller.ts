@@ -51,10 +51,7 @@ export const detail = async (req: Request, res: Response) => {
       }
     }
 
-    res.status(200).json({
-      message: "Chi tiết giỏ hàng!",
-      cart: cartDetail,
-    });
+    res.status(200).json({ cart: cartDetail });
   } catch (error) {
     console.log("Có lỗi khi gọi cart detail", error);
     res.status(500).json({ message: "Lỗi hệ thống!" });

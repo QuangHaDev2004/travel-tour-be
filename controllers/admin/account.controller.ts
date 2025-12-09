@@ -33,7 +33,7 @@ export const registerPost = async (req: Request, res: Response) => {
 
     res.status(201).json({ message: "Đăng ký tài khoản thành công!" });
   } catch (error) {
-    console.log("Lỗi đăng ký account admin", error);
+    console.log("Lỗi khi gọi registerPost", error);
     res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };
@@ -47,20 +47,18 @@ export const loginPost = async (req: Request, res: Response) => {
     });
 
     if (!existAccount) {
-      return res.status(401).json({
-        message: "Tài khoản không tồn tại!",
-      });
+      return res
+        .status(401)
+        .json({ message: "Tài khoản hoặc mật khẩu không chính xác!" });
     }
 
     const isPasswordValid = await bcrypt.compare(
       password,
-      existAccount.password as string
+      `${existAccount.password}`
     );
 
     if (!isPasswordValid) {
-      return res.status(401).json({
-        message: "Mật khẩu không chính xác!",
-      });
+      return res.status(401).json({ message: "Mật khẩu không chính xác!" });
     }
 
     if (existAccount.status !== "active") {
@@ -90,7 +88,7 @@ export const loginPost = async (req: Request, res: Response) => {
     await newRecord.save();
 
     res.cookie("refreshToken", refreshToken, {
-      maxAge: REFRESH_TOKEN_TTL,
+      maxAge: rememberPassword ? 7 * REFRESH_TOKEN_TTL : REFRESH_TOKEN_TTL,
       httpOnly: true,
       secure: process.env.NODE_ENV === "production", // production (https) = true, dev (htttp) = false
       sameSite: "lax", // Cho phép gửi cookie giữa các tên miền
@@ -98,7 +96,7 @@ export const loginPost = async (req: Request, res: Response) => {
 
     res.status(200).json({ message: "Đăng nhập thành công!", accessToken });
   } catch (error) {
-    console.log("Lỗi đăng nhập account admin", error);
+    console.log("Lỗi khi gọi loginPost", error);
     res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };
@@ -108,10 +106,7 @@ export const logout = async (req: Request, res: Response) => {
     const token = req.cookies?.refreshToken;
 
     if (token) {
-      await Session.deleteOne({
-        refreshToken: token,
-      });
-
+      await Session.deleteOne({ refreshToken: token });
       res.clearCookie("refreshToken");
     }
 
