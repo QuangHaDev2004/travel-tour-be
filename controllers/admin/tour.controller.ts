@@ -6,6 +6,7 @@ import { generateRandomNumber } from "../../helpers/generate.helper";
 import { formatDateDDMMYY } from "../../helpers/date.helper";
 import moment from "moment";
 import AccountAdmin from "../../models/account-admin.model";
+import { getCategoryChild } from "../../helpers/category.helper";
 
 export const createPost = async (req: AccountRequest, res: Response) => {
   try {
@@ -112,6 +113,29 @@ export const list = async (req: AccountRequest, res: Response) => {
     // Lọc theo người tạo
     if (req.query.createdBy) {
       find.createdBy = req.query.createdBy;
+    }
+
+    // Lọc theo danh mục
+    if (req.query.category) {
+      const categoryId = req.query.category;
+      const categoryChild = await getCategoryChild(categoryId);
+      const categoryChildId = categoryChild.map(
+        (item: { id: string; name: string }) => item.id
+      );
+      find.category = {
+        $in: [categoryId, ...categoryChildId],
+      };
+    }
+
+    // Lọc theo khoảng giá
+    if (req.query.price) {
+      const [priceMin, priceMax] = `${req.query.price}`
+        .split("-")
+        .map((item) => parseInt(item));
+      find.priceNewAdult = {
+        $gte: priceMin,
+        $lte: priceMax,
+      };
     }
 
     // Lọc theo ngày tạo
