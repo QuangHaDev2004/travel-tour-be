@@ -68,7 +68,7 @@ export const list = async (req: AccountRequest, res: Response) => {
     }
 
     // Phân trang
-    const limitItem = 4;
+    const limitItem = 5;
     let page = 1;
     if (req.query.page && parseInt(`${req.query.page}`) > 0) {
       page = parseInt(`${req.query.page}`);

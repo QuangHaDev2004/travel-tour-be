@@ -8,14 +8,58 @@ import {
 } from "../../config/variable.config";
 import moment from "moment";
 import City from "../../models/city.model";
+import slugify from "slugify";
+import { AccountRequest } from "../../interfaces/resquest.interface";
 
 export const list = async (req: Request, res: Response) => {
   try {
-    const orderList = await Order.find({
+    const find: any = {
       deleted: false,
-    }).sort({
-      createdAt: "desc",
-    });
+    };
+
+    // Lọc theo trạng thái đơn hàng
+    if (req.query.orderStatus) {
+      find.status = req.query.orderStatus;
+    }
+
+    // Lọc theo phương thức thanh toán
+    if (req.query.paymentMethod) {
+      find.paymentMethod = req.query.paymentMethod;
+    }
+
+    // Lọc theo trạng thái thanh toán
+    if (req.query.paymentStatus) {
+      find.paymentStatus = req.query.paymentStatus;
+    }
+
+    // Tìm kiếm
+    if (req.query.keyword) {
+      const keyword = slugify(`${req.query.keyword}`);
+      const keywordRegex = new RegExp(keyword, "i");
+      find.orderCode = keywordRegex;
+    }
+
+    // Phân trang
+    const limitItem = 3;
+    let page = 1;
+    if (req.query.page && parseInt(`${req.query.page}`) > 0) {
+      page = parseInt(`${req.query.page}`);
+    }
+    const skip = (page - 1) * limitItem;
+    const totalRecord = await Order.countDocuments(find);
+    const totalPage = Math.ceil(totalRecord / limitItem);
+    const pagination = {
+      skip: skip,
+      totalRecord: totalRecord,
+      totalPage: totalPage,
+    };
+
+    const orderList = await Order.find(find)
+      .sort({
+        createdAt: "desc",
+      })
+      .limit(limitItem)
+      .skip(skip);
 
     const dataFinal = [];
     for (const orderDetail of orderList) {
@@ -43,12 +87,12 @@ export const list = async (req: Request, res: Response) => {
 
       const paymentMethodName =
         paymentMethodList.find(
-          (item) => item.value === orderDetail.paymentMethod
+          (item) => item.value === orderDetail.paymentMethod,
         )?.label ?? "";
 
       const paymentStatusName =
         paymentStatusList.find(
-          (item) => item.value === orderDetail.paymentStatus
+          (item) => item.value === orderDetail.paymentStatus,
         )?.label ?? "";
 
       const statusInfo =
@@ -76,7 +120,7 @@ export const list = async (req: Request, res: Response) => {
       });
     }
 
-    res.status(200).json({ orderList: dataFinal });
+    res.status(200).json({ orderList: dataFinal, pagination });
   } catch (error) {
     console.log("Có lỗi khi gọi order list", error);
     res.status(500).json({ message: "Lỗi hệ thống!" });
@@ -163,12 +207,42 @@ export const editPatch = async (req: Request, res: Response) => {
         _id: id,
         deleted: false,
       },
-      req.body
+      req.body,
     );
 
     res.status(200).json({ message: "Cập nhật đơn hàng thành công!" });
   } catch (error) {
     console.log("Có lỗi khi gọi order editPatch", error);
-    res.status(500).json({ message: "Lỗi hệ thống!" });
+    res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
+/**
+ * API xóa mềm đơn hàng
+ * @param req Request từ client (chứa id đơn hàng trong params và thông tin account)
+ * @param res Response trả về cho client
+ */
+export const deletePatch = async (req: AccountRequest, res: Response) => {
+  try {
+    // Lấy id đơn hàng từ params
+    const id = req.params.id;
+
+    // Cập nhật trạng thái xóa mềm của đơn hàng
+    await Order.updateOne(
+      {
+        _id: id,
+      },
+      {
+        deleted: true,
+        deletedBy: req.account.id,
+        deletedAt: Date.now(),
+      },
+    );
+
+    // Trả kết quả thành công về phía client
+    res.status(200).json({ message: "Xóa đơn hàng thành công" });
+  } catch (error) {
+    console.log("Có lỗi khi gọi order deletePatch", error);
+    res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };
