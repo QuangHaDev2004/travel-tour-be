@@ -15,7 +15,7 @@ export const createPost = async (req: AccountRequest, res: Response) => {
     }
 
     req.body.tourCode = `NQHTOUR-${generateRandomNumber(6)}-${formatDateDDMMYY(
-      new Date()
+      new Date(),
     )}`;
 
     if (req.body.position) {
@@ -120,7 +120,7 @@ export const list = async (req: AccountRequest, res: Response) => {
       const categoryId = req.query.category;
       const categoryChild = await getCategoryChild(categoryId);
       const categoryChildId = categoryChild.map(
-        (item: { id: string; name: string }) => item.id
+        (item: { id: string; name: string }) => item.id,
       );
       find.category = {
         $in: [categoryId, ...categoryChildId],
@@ -160,7 +160,7 @@ export const list = async (req: AccountRequest, res: Response) => {
     }
 
     // Phân trang
-    const limitItem = 4;
+    const limitItem = 5;
     let page = 1;
     if (req.query.page && parseInt(`${req.query.page}`) > 0) {
       page = parseInt(`${req.query.page}`);
@@ -221,13 +221,13 @@ export const list = async (req: AccountRequest, res: Response) => {
     }
 
     res.status(200).json({
-      message: "Danh sách tour!",
+      message: "Danh sách tour",
       tourList: dataFinal,
       pagination,
     });
   } catch (error) {
     console.log("Lỗi khi gọi list", error);
-    res.status(500).json({ message: "Lỗi hệ thống!" });
+    res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };
 
@@ -268,7 +268,7 @@ export const edit = async (req: AccountRequest, res: Response) => {
 
     if (tourDetail?.departureDate) {
       dataFinal.departureDateFormat = moment(tourDetail.departureDate).format(
-        "YYYY-MM-DD"
+        "YYYY-MM-DD",
       );
     }
 
@@ -380,7 +380,7 @@ export const editPatch = async (req: AccountRequest, res: Response) => {
         _id: id,
         deleted: false,
       },
-      req.body
+      req.body,
     );
 
     res.status(200).json({ message: "Cập nhật tour thành công!" });
@@ -402,7 +402,7 @@ export const deletePatch = async (req: AccountRequest, res: Response) => {
         deleted: true,
         deletedBy: req.account.id,
         deletedAt: Date.now(),
-      }
+      },
     );
 
     res.status(200).json({ message: "Xóa tour thành công!" });
@@ -425,7 +425,7 @@ export const changeMultiPatch = async (req: AccountRequest, res: Response) => {
           },
           {
             status: action,
-          }
+          },
         );
 
         res.status(200).json({ message: "Cập nhật trạng thái thành công!" });
@@ -439,7 +439,7 @@ export const changeMultiPatch = async (req: AccountRequest, res: Response) => {
             deleted: true,
             deletedBy: req.account.id,
             deletedAt: Date.now(),
-          }
+          },
         );
 
         res.status(200).json({ message: "Xóa tour thành công!" });
@@ -451,7 +451,7 @@ export const changeMultiPatch = async (req: AccountRequest, res: Response) => {
           },
           {
             deleted: false,
-          }
+          },
         );
 
         res.status(200).json({ message: "Khôi phục tour thành công!" });
@@ -590,7 +590,7 @@ export const undoPatch = async (req: AccountRequest, res: Response) => {
       },
       {
         deleted: false,
-      }
+      },
     );
 
     res.status(200).json({ message: "Khôi phục tour thành công!" });
