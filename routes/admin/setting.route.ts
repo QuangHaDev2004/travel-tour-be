@@ -12,7 +12,7 @@ router.get("/account-admin/list", settingController.accountAdminList);
 router.post(
   "/account-admin/create",
   upload.single("avatar"),
-  settingController.accountAdminCreatePost
+  settingController.accountAdminCreatePost,
 );
 
 router.get("/account-admin/edit/:id", settingController.accountAdminEdit);
@@ -20,7 +20,17 @@ router.get("/account-admin/edit/:id", settingController.accountAdminEdit);
 router.patch(
   "/account-admin/edit/:id",
   upload.single("avatar"),
-  settingController.accountAdminEditPatch
+  settingController.accountAdminEditPatch,
+);
+
+router.patch(
+  "/account-admin/change-multi",
+  settingController.accountAdminChangeMultiPatch,
+);
+
+router.patch(
+  "/account-admin/delete/:id",
+  settingController.accountAdminDeletePatch,
 );
 
 router.patch(
@@ -29,7 +39,7 @@ router.patch(
     { name: "logo", maxCount: 1 },
     { name: "favicon", maxCount: 1 },
   ]),
-  settingController.websiteInfoPatch
+  settingController.websiteInfoPatch,
 );
 
 router.get("/website-info", settingController.websiteInfo);
