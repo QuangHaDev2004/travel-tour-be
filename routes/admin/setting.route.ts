@@ -52,4 +52,8 @@ router.get("/role/edit/:id", settingController.roleEdit);
 
 router.patch("/role/edit/:id", settingController.roleEditPatch);
 
+router.patch("/role/delete/:id", settingController.roleDeletePatch);
+
+router.patch("/role/change-multi", settingController.roleChangeMultiPatch);
+
 export default router;
