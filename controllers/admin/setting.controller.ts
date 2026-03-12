@@ -406,8 +406,6 @@ export const roleCreatePost = async (req: AccountRequest, res: Response) => {
 
 export const roleList = async (req: AccountRequest, res: Response) => {
   try {
-    console.log(req.query);
-
     const find: any = {
       deleted: false,
     };
@@ -416,7 +414,7 @@ export const roleList = async (req: AccountRequest, res: Response) => {
     if (req.query.keyword) {
       const keyword = slugify(`${req.query.keyword}`);
       const keywordRegex = new RegExp(keyword, "i");
-      find.name = keywordRegex;
+      find.slug = keywordRegex;
     }
 
     // Phân trang
@@ -501,7 +499,7 @@ export const roleEditPatch = async (req: AccountRequest, res: Response) => {
     });
 
     if (!roleDetail) {
-      return res.status(404).json({ message: "Nhóm quyền không tồn tại!" });
+      return res.status(404).json({ message: "Nhóm quyền không tồn tại." });
     }
 
     req.body.updatedBy = req.account.id;
@@ -515,10 +513,10 @@ export const roleEditPatch = async (req: AccountRequest, res: Response) => {
       req.body,
     );
 
-    res.status(200).json({ message: "Cập nhật nhóm quyền thành công!" });
+    res.status(200).json({ message: "Cập nhật nhóm quyền thành công." });
   } catch (error) {
-    console.log("Lỗi khi gọi roleEdit", error);
-    res.status(500).json({ message: "Lỗi hệ thống!" });
+    console.log("Lỗi khi gọi roleEditPatch", error);
+    res.status(500).json({ message: "Lỗi hệ thống." });
   }
 };
 
