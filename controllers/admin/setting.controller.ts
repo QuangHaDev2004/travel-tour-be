@@ -312,7 +312,7 @@ export const accountAdminDeletePatch = async (
     );
 
     // Trả về kết quả thành công
-    res.status(200).json({ message: "Xóa tài khoản quản trị thành công" });
+    res.status(200).json({ message: "Xóa tài khoản quản trị thành công." });
   } catch (error) {
     console.log("Lỗi khi gọi accountAdminDeletePatch", error);
     res.status(500).json({ message: "Lỗi hệ thống" });
@@ -406,11 +406,40 @@ export const roleCreatePost = async (req: AccountRequest, res: Response) => {
 
 export const roleList = async (req: AccountRequest, res: Response) => {
   try {
-    const roleList = await Role.find({
+    console.log(req.query);
+
+    const find: any = {
       deleted: false,
-    }).sort({
-      createdAt: "desc",
-    });
+    };
+
+    // Tìm kiếm
+    if (req.query.keyword) {
+      const keyword = slugify(`${req.query.keyword}`);
+      const keywordRegex = new RegExp(keyword, "i");
+      find.name = keywordRegex;
+    }
+
+    // Phân trang
+    const limitItem = 10;
+    let page = 1;
+    if (req.query.page && parseInt(`${req.query.page}`) > 0) {
+      page = parseInt(`${req.query.page}`);
+    }
+    const skip = (page - 1) * limitItem;
+    const totalRecord = await Role.countDocuments(find);
+    const totalPage = Math.ceil(totalRecord / limitItem);
+    const pagination = {
+      skip: skip,
+      totalRecord: totalRecord,
+      totalPage: totalPage,
+    };
+
+    const roleList = await Role.find(find)
+      .sort({
+        createdAt: "desc",
+      })
+      .skip(skip)
+      .limit(limitItem);
 
     const dataFinal = [];
     for (const item of roleList) {
@@ -424,12 +453,12 @@ export const roleList = async (req: AccountRequest, res: Response) => {
     }
 
     res.status(200).json({
-      message: "Danh sách nhóm quyền!",
       roleList: dataFinal,
+      pagination,
     });
   } catch (error) {
     console.log("Lỗi khi gọi roleList", error);
-    res.status(500).json({ message: "Lỗi hệ thống!" });
+    res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };
 
@@ -490,5 +519,61 @@ export const roleEditPatch = async (req: AccountRequest, res: Response) => {
   } catch (error) {
     console.log("Lỗi khi gọi roleEdit", error);
     res.status(500).json({ message: "Lỗi hệ thống!" });
+  }
+};
+
+export const roleDeletePatch = async (req: AccountRequest, res: Response) => {
+  try {
+    const id = req.params.id;
+
+    await Role.updateOne(
+      {
+        _id: id,
+      },
+      {
+        deleted: true,
+        deletedBy: req.account.id,
+        deletedAt: Date.now(),
+      },
+    );
+
+    res.status(200).json({ message: "Xóa nhóm quyền thành công." });
+  } catch (error) {
+    console.log("Lỗi khi gọi roleDeletePatch", error);
+    res.status(500).json({ message: "Lỗi hệ thống" });
+  }
+};
+
+export const roleChangeMultiPatch = async (
+  req: AccountRequest,
+  res: Response,
+) => {
+  try {
+    // Lấy action và danh sách id từ body request
+    const { action, ids } = req.body;
+
+    switch (action) {
+      case "delete":
+        await Role.updateMany(
+          {
+            _id: { $in: ids },
+          },
+          {
+            deleted: true,
+            deletedBy: req.account.id,
+            deletedAt: Date.now(),
+          },
+        );
+
+        res.status(200).json({ message: "Xóa nhóm quyền thành công." });
+        break;
+
+      default:
+        res.status(400).json({ message: "Hành động không hợp lệ." });
+        break;
+    }
+  } catch (error) {
+    console.log("Lỗi khi gọi roleChangeMultiPatch", error);
+    res.status(500).json({ message: "Lỗi hệ thống" });
   }
 };
