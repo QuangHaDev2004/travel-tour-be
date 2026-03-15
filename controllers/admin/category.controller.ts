@@ -207,7 +207,7 @@ export const editPatch = async (req: AccountRequest, res: Response) => {
         _id: id,
         deleted: false,
       },
-      req.body
+      req.body,
     );
 
     res.status(200).json({ message: "Cập nhật thành công!" });
@@ -229,7 +229,7 @@ export const deletePatch = async (req: AccountRequest, res: Response) => {
         deleted: true,
         deletedBy: req.account.id,
         deletedAt: Date.now(),
-      }
+      },
     );
 
     res.status(200).json({ message: "Xóa danh mục thành công!" });
@@ -252,9 +252,9 @@ export const changeMultiPatch = async (req: AccountRequest, res: Response) => {
           },
           {
             status: action,
-          }
+          },
         );
-        res.status(200).json({ message: "Cập nhật trạng thái thành công!" });
+        res.status(200).json({ message: "Cập nhật trạng thái thành công." });
         break;
       case "delete":
         await Category.updateMany(
@@ -265,16 +265,16 @@ export const changeMultiPatch = async (req: AccountRequest, res: Response) => {
             deleted: true,
             deletedBy: req.account.id,
             deletedAt: Date.now(),
-          }
+          },
         );
-        res.status(200).json({ message: "Xóa danh mục thành công!" });
+        res.status(200).json({ message: "Xóa danh mục thành công." });
         break;
       default:
-        res.status(400).json({ message: "Hành động không hợp lệ!" });
+        res.status(400).json({ message: "Hành động không hợp lệ." });
         break;
     }
   } catch (error) {
     console.log("Lỗi khi gọi changeMultiPatch", error);
-    res.status(500).json({ message: "Lỗi hệ thống!" });
+    res.status(500).json({ message: "Lỗi hệ thống." });
   }
 };
