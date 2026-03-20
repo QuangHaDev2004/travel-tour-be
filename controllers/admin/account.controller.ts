@@ -18,7 +18,7 @@ export const registerPost = async (req: Request, res: Response) => {
 
     if (existAccount) {
       return res.status(409).json({
-        message: "Email đã tồn tại trong hệ thống!",
+        message: "Email đã tồn tại trong hệ thống.",
       });
     }
 
@@ -31,7 +31,7 @@ export const registerPost = async (req: Request, res: Response) => {
     const newAccount = new AccountAdmin(req.body);
     await newAccount.save();
 
-    res.status(201).json({ message: "Đăng ký tài khoản thành công!" });
+    res.status(201).json({ message: "Đăng ký tài khoản thành công." });
   } catch (error) {
     console.log("Lỗi khi gọi registerPost", error);
     res.status(500).json({ message: "Lỗi hệ thống" });
@@ -49,21 +49,21 @@ export const loginPost = async (req: Request, res: Response) => {
     if (!existAccount) {
       return res
         .status(401)
-        .json({ message: "Tài khoản hoặc mật khẩu không chính xác!" });
+        .json({ message: "Tài khoản hoặc mật khẩu không chính xác." });
     }
 
     const isPasswordValid = await bcrypt.compare(
       password,
-      `${existAccount.password}`
+      `${existAccount.password}`,
     );
 
     if (!isPasswordValid) {
-      return res.status(401).json({ message: "Mật khẩu không chính xác!" });
+      return res.status(401).json({ message: "Mật khẩu không chính xác." });
     }
 
     if (existAccount.status !== "active") {
       return res.status(401).json({
-        message: "Tài khoản chưa được kích hoạt!",
+        message: "Tài khoản chưa được kích hoạt.",
       });
     }
 
@@ -74,7 +74,7 @@ export const loginPost = async (req: Request, res: Response) => {
       `${process.env.ACCESS_TOKEN_SECRET}`,
       {
         expiresIn: ACCESS_TOKEN_TTL,
-      }
+      },
     );
 
     const refreshToken = crypto.randomBytes(64).toString("hex");
@@ -94,10 +94,10 @@ export const loginPost = async (req: Request, res: Response) => {
       sameSite: "lax", // Cho phép gửi cookie giữa các tên miền
     });
 
-    res.status(200).json({ message: "Đăng nhập thành công!", accessToken });
+    res.status(200).json({ message: "Đăng nhập thành công.", accessToken });
   } catch (error) {
-    console.log("Lỗi khi gọi loginPost", error);
-    res.status(500).json({ message: "Lỗi hệ thống" });
+    console.log("Lỗi khi gọi loginPost.", error);
+    res.status(500).json({ message: "Lỗi hệ thống." });
   }
 };
 
@@ -110,10 +110,10 @@ export const logout = async (req: Request, res: Response) => {
       res.clearCookie("refreshToken");
     }
 
-    res.status(200).json({ message: "Đăng xuất thành công!" });
+    res.status(200).json({ message: "Đăng xuất thành công." });
   } catch (error) {
-    console.log("Lỗi khi gọi logout", error);
-    res.status(500).json({ message: "Lỗi hệ thống" });
+    console.log("Lỗi khi gọi logout.", error);
+    res.status(500).json({ message: "Lỗi hệ thống." });
   }
 };
 
@@ -137,7 +137,7 @@ export const authMe = async (req: AccountRequest, res: Response) => {
 
     return res.status(200).json({ account: dataFinal });
   } catch (error) {
-    console.error("Lỗi khi gọi authMe", error);
-    return res.status(500).json({ message: "Lỗi hệ thống" });
+    console.error("Lỗi khi gọi authMe.", error);
+    return res.status(500).json({ message: "Lỗi hệ thống." });
   }
 };

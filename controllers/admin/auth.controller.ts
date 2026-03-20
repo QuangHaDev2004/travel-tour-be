@@ -8,18 +8,18 @@ export const refreshToken = async (req: Request, res: Response) => {
   try {
     const token = req.cookies?.refreshToken;
     if (!token) {
-      return res.status(401).json({ message: "Token không tồn tại!" });
+      return res.status(401).json({ message: "Token không tồn tại." });
     }
 
     const session = await Session.findOne({ refreshToken: token });
     if (!session) {
       return res.status(403).json({
-        message: "Token không hợp lệ hoặc hết hạn!",
+        message: "Token không hợp lệ hoặc hết hạn.",
       });
     }
 
     if (session.expiresAt && session.expiresAt < new Date()) {
-      return res.status(403).json({ message: "Token đã hết hạn!" });
+      return res.status(403).json({ message: "Token đã hết hạn." });
     }
 
     const accessToken = jwt.sign(
@@ -35,6 +35,6 @@ export const refreshToken = async (req: Request, res: Response) => {
     res.status(200).json({ accessToken });
   } catch (error) {
     console.log("Lỗi khi gọi refreshToken", error);
-    res.status(500).json({ message: "Lỗi hệ thống!" });
+    res.status(500).json({ message: "Lỗi hệ thống." });
   }
 };
