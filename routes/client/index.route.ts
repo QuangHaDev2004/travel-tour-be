@@ -7,6 +7,7 @@ import searchRoutes from "./search.route";
 import tourRoutes from "./tour.route";
 import cartRoutes from "./cart.route";
 import orderRoutes from "./order.route";
+import chatbotRoutes from "./chatbot.route";
 
 const router = Router();
 
@@ -25,5 +26,7 @@ router.use("/tour", tourRoutes);
 router.use("/cart", cartRoutes);
 
 router.use("/order", orderRoutes);
+
+router.use("/chatbot", chatbotRoutes);
 
 export default router;
