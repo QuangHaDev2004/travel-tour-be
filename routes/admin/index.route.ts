@@ -11,6 +11,7 @@ import templateRoutes from "./template.route";
 import contactRoutes from "./contact.route";
 import uploadRoutes from "./upload.route";
 import orderRoutes from "./order.route";
+import reportRoutes from "./report.route";
 
 import * as authMiddleware from "../../middlewares/admin/auth.middleware";
 
@@ -39,5 +40,7 @@ router.use("/contact", authMiddleware.verifyToken, contactRoutes);
 router.use("/upload", uploadRoutes);
 
 router.use("/order", authMiddleware.verifyToken, orderRoutes);
+
+router.use("/report", authMiddleware.verifyToken, reportRoutes);
 
 export default router;
