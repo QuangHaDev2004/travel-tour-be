@@ -13,6 +13,13 @@ import axios from "axios";
 import CryptoJS from "crypto-js";
 import { sortObject } from "../../helpers/sort.helper";
 
+/**
+ * Xử lý tạo đơn đặt tour mới.
+ * Thực hiện: Tính tổng tiền, trừ số lượng tồn kho của từng loại vé và lưu DB.
+ * @param {Request} req - Chứa danh sách items (tourId, quantity) và thông tin khách hàng.
+ * @param {Response} res - Trả về mã đơn hàng orderCode nếu thành công.
+ * @author QuangHaDev - 28.11.2025
+ */
 export const createPost = async (req: Request, res: Response) => {
   try {
     req.body.orderCode = "OD" + generateRandomNumber(10);
@@ -53,7 +60,7 @@ export const createPost = async (req: Request, res: Response) => {
             stockAdult: itemInfo.stockAdult - item.quantityAdult,
             stockChildren: itemInfo.stockChildren - item.quantityChildren,
             stockBaby: itemInfo.stockBaby - item.quantityBaby,
-          }
+          },
         );
       }
     }
@@ -79,6 +86,12 @@ export const createPost = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Lấy thông tin chi tiết đơn hàng sau khi đặt thành công.
+ * Hỗ trợ format dữ liệu hiển thị (ngày tháng, tên trạng thái, thông tin tour đi kèm).
+ * @param {Request} req - Query params bao gồm orderCode và phone.
+ * @author QuangHaDev - 29.11.2025
+ */
 export const success = async (req: Request, res: Response) => {
   try {
     const { orderCode, phone } = req.query;
@@ -109,21 +122,21 @@ export const success = async (req: Request, res: Response) => {
 
     if (orderDetail.createdAt) {
       dataFinal.createdAtFormat = moment(orderDetail.createdAt).format(
-        "HH:mm - DD/MM/YYYY"
+        "HH:mm - DD/MM/YYYY",
       );
     }
 
     if (orderDetail.paymentMethod) {
       dataFinal.paymentMethodName =
         paymentMethodList.find(
-          (item) => item.value === orderDetail.paymentMethod
+          (item) => item.value === orderDetail.paymentMethod,
         )?.label ?? "";
     }
 
     if (orderDetail.paymentStatus) {
       dataFinal.paymentStatusName =
         paymentStatusList.find(
-          (item) => item.value === orderDetail.paymentStatus
+          (item) => item.value === orderDetail.paymentStatus,
         )?.label ?? "";
     }
 
@@ -152,7 +165,7 @@ export const success = async (req: Request, res: Response) => {
 
         if (item.departureDate) {
           itemFinal.departureDateFormat = moment(item.departureDate).format(
-            "DD/MM/YYYY"
+            "DD/MM/YYYY",
           );
         }
 
@@ -187,6 +200,11 @@ export const success = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Khởi tạo giao dịch thanh toán qua cổng ZaloPay.
+ * Tạo mã MAC bảo mật và redirect người dùng sang trang thanh toán của ZaloPay.
+ * @author QuangHaDev - 30.11.2025
+ */
 export const paymentZaloPay = async (req: Request, res: Response) => {
   try {
     const { orderCode, phone } = req.query;
@@ -255,6 +273,11 @@ export const paymentZaloPay = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Xử lý Callback (Webhook) từ ZaloPay Server sau khi người dùng thanh toán.
+ * Xác thực mã MAC và cập nhật trạng thái 'paid' cho đơn hàng trong CSDL.
+ * @author QuangHaDev - 30.11.2025
+ */
 export const paymentZaloPayResultPost = async (req: Request, res: Response) => {
   const config = {
     key2: process.env.ZALOPAY_KEY2,
@@ -287,7 +310,7 @@ export const paymentZaloPayResultPost = async (req: Request, res: Response) => {
         },
         {
           paymentStatus: "paid",
-        }
+        },
       );
 
       result.return_code = 1;
@@ -302,6 +325,11 @@ export const paymentZaloPayResultPost = async (req: Request, res: Response) => {
   res.json(result);
 };
 
+/**
+ * Khởi tạo giao dịch thanh toán qua cổng VNPay.
+ * Cấu hình các tham số vnp_Params, tạo chữ ký SHA512 và redirect tới VNPay.
+ * @author QuangHaDev - 30.11.2025
+ */
 export const paymentVNPay = async (req: Request, res: Response) => {
   try {
     const { orderCode, phone } = req.query;
@@ -373,6 +401,11 @@ export const paymentVNPay = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Xử lý kết quả trả về từ VNPay (Return URL).
+ * Kiểm tra tính hợp lệ của chữ ký và cập nhật trạng thái thanh toán đơn hàng.
+ * @author QuangHaDev - 30.11.2025
+ */
 export const paymentVNPayResult = async (req: Request, res: Response) => {
   let vnp_Params = req.query;
 
@@ -410,16 +443,157 @@ export const paymentVNPayResult = async (req: Request, res: Response) => {
         },
         {
           paymentStatus: "paid",
-        }
+        },
       );
 
       res.redirect(
-        `${process.env.WEBSITE_DOMAIN_FE}/order/success?orderCode=${orderCode}&phone=${phone}`
+        `${process.env.WEBSITE_DOMAIN_FE}/order/success?orderCode=${orderCode}&phone=${phone}`,
       );
     }
 
     res.render("success", { code: vnp_Params["vnp_ResponseCode"] });
   } else {
     res.redirect("/");
+  }
+};
+
+/**
+ * Tra cứu lịch sử đơn hàng dựa trên số điện thoại khách hàng.
+ * Trả về danh sách đơn hàng kèm thông tin tour chi tiết (tên, ảnh, ngày khởi hành).
+ * @param {Request} req - Query param phone.
+ * @author QuangHaDev - 04.04.2026
+ */
+export const tracking = async (req: Request, res: Response) => {
+  try {
+    const phone = req.query.phone;
+
+    if (!phone) {
+      return res.status(400).json({ message: "Số điện thoại là bắt buộc." });
+    }
+
+    // lấy danh sách order
+    const orders = await Order.find({
+      phone: phone,
+      deleted: false,
+    }).sort({ createdAt: -1 });
+
+    if (!orders.length) {
+      return res.json([]);
+    }
+
+    const dataFinal = [];
+
+    for (const order of orders) {
+      const orderData = {
+        orderId: order._id,
+        orderCode: order.orderCode,
+        status: order.status,
+        createdAtFormat: "",
+        total: order.total,
+        paymentStatus: order.paymentStatus,
+        items: [] as any,
+      };
+
+      if (order.createdAt) {
+        orderData.createdAtFormat = moment(order.createdAt).format(
+          "DD/MM/YYYY",
+        );
+      }
+
+      const tourIds = order.items.map((item) => item.tourId);
+      const tours = await Tour.find({
+        _id: { $in: tourIds },
+        deleted: false,
+        status: "active",
+      });
+
+      for (const tour of tours) {
+        const itemData = {
+          tourId: tour._id,
+          name: tour.name,
+          avatar: tour.avatar,
+          slug: tour.slug,
+          locationsFromFormat: "",
+          departureDateFormat: "",
+        };
+
+        const cityInfo = await City.find({
+          _id: { $in: tour.locationsFrom },
+        });
+
+        if (cityInfo) {
+          itemData.locationsFromFormat =
+            cityInfo.map((item) => item.name).join(", ") || "Chưa xác định";
+        }
+
+        if (tour.departureDate) {
+          itemData.departureDateFormat =
+            moment(tour.departureDate).format("DD/MM/YYYY") || "Chưa xác định";
+        }
+
+        orderData.items.push(itemData);
+      }
+
+      dataFinal.push(orderData);
+    }
+
+    res.status(200).json({ orderTracking: dataFinal });
+  } catch (error) {
+    console.log("Có lỗi khi gọi order tracking: ", error);
+    res.status(500).json({ message: "Lỗi hệ thống." });
+  }
+};
+
+/**
+ * Xử lý hủy đơn hàng từ phía người dùng.
+ * Chỉ cho phép hủy đơn ở trạng thái 'initial' và chưa thanh toán.
+ * @param {Request} req - Body chứa orderId.
+ * @author QuangHaDev - 04.04.2026
+ */
+export const cancelOrder = async (req: Request, res: Response) => {
+  try {
+    const { orderId } = req.body;
+
+    if (!orderId) {
+      return res.status(400).json({ message: "ID đơn hàng là bắt buộc." });
+    }
+
+    const order = await Order.findOne({
+      _id: orderId,
+      deleted: false,
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        message: "Đơn hàng không tồn tại.",
+      });
+    }
+
+    if (order.status !== "initial") {
+      return res.status(400).json({
+        message: "Không thể hủy đơn hàng này.",
+      });
+    }
+
+    if (order.paymentStatus !== "unpaid") {
+      return res.status(400).json({
+        message: "Đơn đã thanh toán, không thể hủy.",
+      });
+    }
+
+    await Order.updateOne(
+      {
+        _id: orderId,
+        deleted: false,
+      },
+      {
+        status: "cancel",
+      },
+    );
+
+    res.status(200).json({ message: "Hủy đơn hàng thành công." });
+  } catch (error) {
+    console.log("Có lỗi khi gọi cancel order: ", error);
+    res.status(500).json({ message: "Lỗi hệ thống." });
   }
 };

@@ -15,4 +15,8 @@ router.get("/payment-vnpay", orderController.paymentVNPay);
 
 router.get("/payment-vnpay-result", orderController.paymentVNPayResult);
 
+router.get("/tracking", orderController.tracking);
+
+router.patch("/cancel", orderController.cancelOrder);
+
 export default router;
