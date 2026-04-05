@@ -1,10 +1,14 @@
 import { NextFunction, Request, Response } from "express";
 import Joi from "joi";
 
+/**
+ * Middleware xác thực dữ liệu khi đăng ký tài khoản.
+ * @author QuangHaDev - 20.11.2025
+ */
 export const registerPost = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schema = Joi.object({
     fullName: Joi.string().required().min(5).max(50).messages({
@@ -59,10 +63,14 @@ export const registerPost = async (
   next();
 };
 
+/**
+ * Middleware xác thực dữ liệu khi đăng nhập.
+ * @author QuangHaDev - 21.11.2025
+ */
 export const loginPost = async (
   req: Request,
   res: Response,
-  next: NextFunction
+  next: NextFunction,
 ) => {
   const schema = Joi.object({
     email: Joi.string().required().email().messages({
@@ -85,97 +93,106 @@ export const loginPost = async (
   next();
 };
 
-// module.exports.forgotPasswordPost = async (req, res, next) => {
-//   const schema = Joi.object({
-//     email: Joi.string().required().email().messages({
-//       "string.empty": "Vui lòng nhập email của bạn!",
-//       "string.email": "Email không đúng định dạng!",
-//     }),
-//   });
+/**
+ * Middleware xác thực dữ liệu đầu vào cho yêu cầu khôi phục mật khẩu.
+ * @author QuangHaDev - 05.04.2026
+ */
+export const forgotPasswordPost = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const schema = Joi.object({
+    email: Joi.string().required().email().messages({
+      "string.empty": "Vui lòng nhập email của bạn.",
+      "string.email": "Email không đúng định dạng.",
+    }),
+  });
 
-//   const { error } = schema.validate(req.body);
-//   if (error) {
-//     const errorMessage = error.details[0].message;
+  const { error } = schema.validate(req.body);
+  if (error) {
+    const errorMessage = error.details[0].message;
+    return res.status(400).json({ message: errorMessage });
+  }
 
-//     res.json({
-//       code: "error",
-//       message: errorMessage,
-//     });
-//     return;
-//   }
+  next();
+};
 
-//   next();
-// };
+/**
+ * Middleware xác thực dữ liệu đầu vào cho quá trình xác nhận mã OTP.
+ * @author QuangHaDev - 05.04.2026
+ */
+export const otpPasswordPost = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const schema = Joi.object({
+    email: Joi.string().required().email().messages({
+      "string.empty": "Vui lòng nhập email của bạn!",
+      "string.email": "Email không đúng định dạng!",
+    }),
+    otp: Joi.string().required().messages({
+      "string.empty": "Vui lòng nhập mã OTP!!",
+    }),
+  });
 
-// module.exports.otpPasswordPost = async (req, res, next) => {
-//   const schema = Joi.object({
-//     email: Joi.string().required().email().messages({
-//       "string.empty": "Vui lòng nhập email của bạn!",
-//       "string.email": "Email không đúng định dạng!",
-//     }),
-//     otp: Joi.string().required().messages({
-//       "string.empty": "Vui lòng nhập mã OTP!!",
-//     }),
-//   });
+  const { error } = schema.validate(req.body);
+  if (error) {
+    const errorMessage = error.details[0].message;
+    return res.status(400).json({ message: errorMessage });
+  }
 
-//   const { error } = schema.validate(req.body);
-//   if (error) {
-//     const errorMessage = error.details[0].message;
+  next();
+};
 
-//     res.json({
-//       code: "error",
-//       message: errorMessage,
-//     });
-//     return;
-//   }
+/**
+ * Middleware xác thực mật khẩu mới khi đặt lại (Reset Password).
+ * @author QuangHaDev - 05.04.2026
+ */
+export const resetPasswordPost = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  const schema = Joi.object({
+    password: Joi.string()
+      .required()
+      .min(8)
+      .custom((value, helpers) => {
+        if (!/[A-Z]/.test(value)) {
+          return helpers.error("password.uppercase");
+        }
 
-//   next();
-// };
+        if (!/[a-z]/.test(value)) {
+          return helpers.error("password.lowercase");
+        }
 
-// module.exports.resetPasswordPost = async (req, res, next) => {
-//   const schema = Joi.object({
-//     password: Joi.string()
-//       .required()
-//       .min(8)
-//       .custom((value, helpers) => {
-//         if (!/[A-Z]/.test(value)) {
-//           return helpers.error("password.uppercase");
-//         }
+        if (!/\d/.test(value)) {
+          return helpers.error("password.number");
+        }
 
-//         if (!/[a-z]/.test(value)) {
-//           return helpers.error("password.lowercase");
-//         }
+        if (!/[^a-zA-Z0-9\s]/.test(value)) {
+          return helpers.error("password.special");
+        }
 
-//         if (!/\d/.test(value)) {
-//           return helpers.error("password.number");
-//         }
+        return value;
+      })
+      .messages({
+        "string.empty": "Vui lòng nhập mật khẩu!",
+        "string.min": "Mật khẩu phải chứa ít nhất 8 ký tự!",
+        "password.uppercase": "Mật khẩu phải chứa ký tự viết hoa!",
+        "password.lowercase": "Mật khẩu phải chứa ký tự viết thường!",
+        "password.number": "Mật khẩu phải chứa chữ số!",
+        "password.special": "Mật khẩu phải chứa ký tự đặc biệt!",
+      }),
+  });
 
-//         if (!/[^a-zA-Z0-9\s]/.test(value)) {
-//           return helpers.error("password.special");
-//         }
+  const { error } = schema.validate(req.body);
+  if (error) {
+    const errorMessage = error.details[0].message;
+    return res.status(400).json({ message: errorMessage });
+  }
 
-//         return value;
-//       })
-//       .messages({
-//         "string.empty": "Vui lòng nhập mật khẩu!",
-//         "string.min": "Mật khẩu phải chứa ít nhất 8 ký tự!",
-//         "password.uppercase": "Mật khẩu phải chứa ký tự viết hoa!",
-//         "password.lowercase": "Mật khẩu phải chứa ký tự viết thường!",
-//         "password.number": "Mật khẩu phải chứa chữ số!",
-//         "password.special": "Mật khẩu phải chứa ký tự đặc biệt!",
-//       }),
-//   });
-
-//   const { error } = schema.validate(req.body);
-//   if (error) {
-//     const errorMessage = error.details[0].message;
-
-//     res.json({
-//       code: "error",
-//       message: errorMessage,
-//     });
-//     return;
-//   }
-
-//   next();
-// };
+  next();
+};
