@@ -4,6 +4,10 @@ import { searchTours } from "../../services/tour.service";
 import { mapCity } from "../../services/mapCity.service";
 import { ai } from "../../config/aiConfig";
 
+/**
+ * Xử lý yêu cầu trò chuyện với Trợ lý ảo (Chatbot) của 36Travel.
+ * @author QuangHaDev - 20.03.2026
+ */
 export const createChatbotPost = async (req: Request, res: Response) => {
   try {
     const message = req.body.message;
@@ -16,7 +20,10 @@ export const createChatbotPost = async (req: Request, res: Response) => {
 
     // hiểu câu hỏi user
     const intent = await extractIntent(message);
-    console.log("Intent", intent);
+    console.log({
+      "Msg: ": message,
+      "Intent: ": intent,
+    });
 
     let tours: any[] = [];
 

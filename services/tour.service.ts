@@ -11,7 +11,7 @@ export const searchTours = async (intent: any) => {
     status: "active",
   };
 
-  // tìm city
+  // tìm theo điểm đến
   if (intent.locationTo) {
     const cities = await City.find({
       name: {
@@ -21,10 +21,30 @@ export const searchTours = async (intent: any) => {
     });
 
     const ids = cities.map((c) => c._id);
+    console.log("IDs: ", ids);
+    
 
     if (ids.length > 0) {
       query.locationsTo = { $in: ids };
+    } else {
+      intent.keyword = intent.locationTo;
+      intent.locationTo = "";
     }
+  }
+
+  // tìm theo từ khóa
+  if (intent.keyword) {
+    const keyword = intent.keyword;
+
+    // nếu đã có query trước đó → cần merge thêm $or
+    if (!query.$or) {
+      query.$or = [];
+    }
+
+    query.$or.push(
+      { name: { $regex: keyword, $options: "i" } },
+      { "schedules.description": { $regex: keyword, $options: "i" } },
+    );
   }
 
   if (intent.days) {
@@ -40,6 +60,22 @@ export const searchTours = async (intent: any) => {
       $lte: intent.price, // nhỏ hơn hoặc bằng
     };
   }
+
+  // nếu có cả location + keyword thì ưu tiên AND logic
+  if (intent.locationTo && intent.keyword) {
+    query.$and = [
+      {
+        $or: [
+          { name: { $regex: intent.keyword, $options: "i" } },
+          {
+            "schedules.description": { $regex: intent.keyword, $options: "i" },
+          },
+        ],
+      },
+    ];
+  }
+
+  console.log("Intent in searchTours: ", intent);
 
   return await Tour.find(query).limit(5);
 };

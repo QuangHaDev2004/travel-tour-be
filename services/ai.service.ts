@@ -5,6 +5,7 @@ import { ai } from "../config/aiConfig";
  * Sử dụng Gemini AI để trích xuất các thông tin du lịch cụ thể.
  * @param message - Câu hỏi hoặc nội dung chat từ người dùng (VD: "Tôi muốn đi Đà Lạt 3 ngày giá rẻ")
  * @returns Đối tượng JSON chứa các thông tin: địa điểm, ngân sách, số ngày và phương tiện.
+ * @author QuangHaDev - 20.03.2026
  */
 export const extractIntent = async (message: string) => {
   const prompt = `
@@ -18,10 +19,23 @@ export const extractIntent = async (message: string) => {
       - "out_of_scope": không liên quan (mua điện thoại, hỏi code...)
 
     2. Trích xuất thông tin và CHỈ trả về JSON hợp lệ.
-      - locationTo: địa điểm đến (VD: Đà Lạt, Phú Quốc)
+      - locationTo: địa điểm đến 
+        + CHỈ lấy địa danh cụ thể (tỉnh/thành phố/quốc gia)
+        + PHẢI xuất hiện rõ ràng trong câu
+        + KHÔNG được suy diễn
+
+      - keyword: 
+        + Dùng cho từ chung chung hoặc loại địa điểm 
+        + Nếu không chắc là location → đưa vào keyword
+
       - days: số ngày (VD: 3 ngày, 3N2Đ)
       - vehicle: phương tiện (xe, máy bay...)
       - price: ngân sách (chỉ lấy số, ví dụ: 5000000)
+
+    Ràng buộc nghiêm ngặt:
+      - TUYỆT ĐỐI KHÔNG tự suy đoán location
+      - Nếu không chắc → locationTo = ""
+      - KHÔNG được bịa địa danh
 
     Nếu không có thì:
       - string → ""
@@ -36,6 +50,7 @@ export const extractIntent = async (message: string) => {
     {
       "intentType": "greeting | small_talk | tour_search | out_of_scope",
       "locationTo": "",
+      "keyword": "",
       "days": "",
       "vehicle": "",
       "price": null
@@ -59,6 +74,7 @@ export const extractIntent = async (message: string) => {
     return {
       intentType: parsed.intentType || "out_of_scope",
       locationTo: parsed.locationTo || "",
+      keyword: parsed.keyword || "",
       days: parsed.days || "",
       vehicle: parsed.vehicle || "",
       price: parsed.price ? Number(parsed.price) : null,
@@ -69,6 +85,7 @@ export const extractIntent = async (message: string) => {
     return {
       intentType: "out_of_scope",
       locationTo: "",
+      keyword: "",
       days: "",
       vehicle: "",
       price: null,
