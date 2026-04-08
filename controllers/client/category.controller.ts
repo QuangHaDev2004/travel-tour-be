@@ -46,6 +46,14 @@ export const list = async (req: Request, res: Response) => {
       avatar: categoryDetail.avatar,
     });
 
+    // Sắp xếp theo tiêu chí
+    let sort: any = {};
+    if (req.query.sortKey && req.query.sortValue) {
+      sort[`${req.query.sortKey}`] = req.query.sortValue;
+    } else {
+      sort.position = "desc";
+    }
+
     // Category Detail
     const categoryFinal = {
       name: categoryDetail.name,
@@ -57,15 +65,34 @@ export const list = async (req: Request, res: Response) => {
     const categoryChild = await categoryHelper.getCategoryChild(categoryId);
     const categoryChildId = categoryChild.map((item: any) => item.id);
 
-    const tourList = await Tour.find({
+    let find: any = {
       category: {
         $in: [categoryId, ...categoryChildId],
       },
       deleted: false,
       status: "active",
-    }).sort({
-      position: "desc",
-    });
+    };
+
+    // Phân trang
+    const limitItems = 6;
+    let page = 1;
+    if (req.query.page && parseInt(`${req.query.page}`) > 0) {
+      page = parseInt(`${req.query.page}`);
+    }
+    const skip = (page - 1) * limitItems;
+    const totalRecord = await Tour.countDocuments(find);
+    const totalPage = Math.ceil(totalRecord / limitItems);
+    const pagination = {
+      skip: skip,
+      totalRecord: totalRecord,
+      totalPage: totalPage,
+      currentPage: page,
+    };
+
+    const tourList = await Tour.find(find)
+      .sort(sort)
+      .skip(skip)
+      .limit(limitItems);
 
     const tourListFinal = [];
     for (const item of tourList) {
@@ -83,7 +110,7 @@ export const list = async (req: Request, res: Response) => {
 
       if (item.priceAdult && item.priceNewAdult) {
         itemFinal.discount = Math.floor(
-          ((item.priceAdult - item.priceNewAdult) / item.priceAdult) * 100
+          ((item.priceAdult - item.priceNewAdult) / item.priceAdult) * 100,
         );
       }
 
@@ -95,7 +122,7 @@ export const list = async (req: Request, res: Response) => {
 
       if (item.departureDate) {
         itemFinal.departureDateFormat = moment(item.departureDate).format(
-          "DD/MM/YYYY"
+          "DD/MM/YYYY",
         );
       }
 
@@ -103,10 +130,10 @@ export const list = async (req: Request, res: Response) => {
     }
 
     res.status(200).json({
-      message: "Danh sách tour theo danh mục!",
       breadcrumb,
       categoryDetail: categoryFinal,
       tourList: tourListFinal,
+      pagination,
     });
   } catch (error) {
     console.log("Lỗi khi gọi list", error);
