@@ -5,6 +5,10 @@ import Tour from "../../models/tour.model";
 import City from "../../models/city.model";
 import moment from "moment";
 
+/**
+ * Lấy danh sách tour theo danh mục sản phẩm (Category).
+ * @author QuangHaDev - 26.11.2025
+ */
 export const list = async (req: Request, res: Response) => {
   try {
     const { slug } = req.params;
@@ -137,6 +141,6 @@ export const list = async (req: Request, res: Response) => {
     });
   } catch (error) {
     console.log("Lỗi khi gọi list", error);
-    res.status(500).json({ message: "Lỗi hệ thống!" });
+    res.status(500).json({ message: "Lỗi hệ thống." });
   }
 };
