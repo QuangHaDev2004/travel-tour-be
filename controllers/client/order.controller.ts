@@ -49,7 +49,15 @@ export const createPost = async (req: Request, res: Response) => {
           itemInfo.stockChildren == null ||
           itemInfo.stockBaby == null
         ) {
-          throw new Error("Số lượng không hợp lệ!");
+          throw new Error("Số lượng không hợp lệ.");
+        }
+
+        if (
+          item.quantityAdult > itemInfo.stockAdult ||
+          item.quantityChildren > itemInfo.stockChildren ||
+          item.quantityBaby > itemInfo.stockBaby
+        ) {
+          throw new Error("Số lượng vượt quá số lượng tour.");
         }
 
         await Tour.updateOne(
@@ -77,7 +85,7 @@ export const createPost = async (req: Request, res: Response) => {
     await newRecord.save();
 
     res.status(201).json({
-      message: "Chúc mừng bạn đã đặt tour thành công!",
+      message: "Chúc mừng bạn đã đặt tour thành công.",
       orderCode: req.body.orderCode,
     });
   } catch (error) {

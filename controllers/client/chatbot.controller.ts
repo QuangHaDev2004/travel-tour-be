@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { extractIntent } from "../../services/ai.service";
 import { searchTours } from "../../services/tour.service";
 import { mapCity } from "../../services/mapCity.service";
-import { ai } from "../../config/aiConfig";
+import { ai } from "../../config/ai.config";
 
 /**
  * Xử lý yêu cầu trò chuyện với Trợ lý ảo (Chatbot) của 36Travel.

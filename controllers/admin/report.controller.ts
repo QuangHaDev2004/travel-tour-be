@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import Order from "../../models/order.model";
 import { fillMissingData } from "../../utils/fillMissingData";
+import { buildTimeFilter } from "../../helpers/buildTimeFilter.helper";
 
 /**
  * Doanh thu
@@ -45,12 +46,18 @@ export const revenueReport = async (req: Request, res: Response) => {
     // theo tuần
     if (type === "week") {
       const now = new Date();
+      const day = now.getDay(); // 0 (CN) → 6 (T7)
+
+      // convert: T2 = 0, CN = 6
+      const diff = day === 0 ? -6 : 1 - day;
 
       const firstDay = new Date(now);
-      firstDay.setDate(now.getDate() - now.getDay()); // CN
+      firstDay.setDate(now.getDate() + diff);
+      firstDay.setHours(0, 0, 0, 0);
 
       const lastDay = new Date(firstDay);
-      lastDay.setDate(firstDay.getDate() + 6); // hết tuần
+      lastDay.setDate(firstDay.getDate() + 6);
+      lastDay.setHours(23, 59, 59, 999);
 
       match.createdAt = {
         $gte: firstDay,
@@ -128,13 +135,12 @@ export const revenueReport = async (req: Request, res: Response) => {
 
 /**
  * Lấy top 5 tour bán chạy theo số lượng
+ * Author: QuangHaDev 01.04.2026
  */
 export const topTourQuantity = async (req: Request, res: Response) => {
   try {
-    const match: any = {
-      deleted: false,
-      paymentStatus: "paid",
-    };
+    const { type, date, month, year } = req.body;
+    const match = buildTimeFilter(type, date, month, year);
 
     const result = await Order.aggregate([
       { $match: match },
@@ -189,8 +195,6 @@ export const topTourQuantity = async (req: Request, res: Response) => {
       },
     ]);
 
-    console.log(result);
-
     res.json({ topTourQuantity: result });
   } catch (error) {
     console.log("Lỗi khi gọi topTourQuantity.", error);
@@ -200,17 +204,15 @@ export const topTourQuantity = async (req: Request, res: Response) => {
 
 /**
  * Lấy top 5 tour bán chạy theo doanh thu
+ * Author: QuangHaDev 01.04.2026
  */
 export const topTourRevenue = async (req: Request, res: Response) => {
   try {
-    const result = await Order.aggregate([
-      {
-        $match: {
-          deleted: false,
-          paymentStatus: "paid",
-        },
-      },
+    const { type, date, month, year } = req.body;
+    const match = buildTimeFilter(type, date, month, year);
 
+    const result = await Order.aggregate([
+      { $match: match },
       { $unwind: "$items" },
 
       {

@@ -5,8 +5,8 @@ const router = Router();
 
 router.post("/revenue", reportController.revenueReport);
 
-router.get("/top-tour-quantity", reportController.topTourQuantity);
+router.post("/top-tour-quantity", reportController.topTourQuantity);
 
-router.get("/top-tour-revenue", reportController.topTourRevenue);
+router.post("/top-tour-revenue", reportController.topTourRevenue);
 
 export default router;

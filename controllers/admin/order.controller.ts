@@ -40,7 +40,7 @@ export const list = async (req: Request, res: Response) => {
     }
 
     // Phân trang
-    const limitItem = 3;
+    const limitItem = 10;
     let page = 1;
     if (req.query.page && parseInt(`${req.query.page}`) > 0) {
       page = parseInt(`${req.query.page}`);

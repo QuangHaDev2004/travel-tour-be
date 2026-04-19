@@ -3,6 +3,7 @@ import Tour from "../../models/tour.model";
 import City from "../../models/city.model";
 import moment from "moment";
 import slugify from "slugify";
+import { SLUG_OPTIONS } from "../../config/slug.config";
 
 /**
  * Lấy danh sách Tour kết hợp bộ lọc tìm kiếm nâng cao.
@@ -17,9 +18,11 @@ export const list = async (req: Request, res: Response) => {
 
     // Từ khóa
     if (req.query.keyword) {
-      const keyword = slugify(req.query.keyword as string);
+      const keyword = slugify(req.query.keyword as string, SLUG_OPTIONS);
       const keywordRegex = new RegExp(keyword, "i");
       find.slug = keywordRegex;
+
+      console.log("Keyword regex:", keywordRegex);
     }
 
     // Khoảng giá

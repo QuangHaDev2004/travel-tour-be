@@ -7,6 +7,7 @@ import { formatDateDDMMYY } from "../../helpers/date.helper";
 import moment from "moment";
 import AccountAdmin from "../../models/account-admin.model";
 import { getCategoryChild } from "../../helpers/category.helper";
+import { SLUG_OPTIONS } from "../../config/slug.config";
 
 export const createPost = async (req: AccountRequest, res: Response) => {
   try {
@@ -154,7 +155,7 @@ export const list = async (req: AccountRequest, res: Response) => {
 
     // Tìm kiếm
     if (req.query.keyword) {
-      const keyword = slugify(`${req.query.keyword}`);
+      const keyword = slugify(`${req.query.keyword}`, SLUG_OPTIONS);
       const keywordRegex = new RegExp(keyword, "i");
       find.slug = keywordRegex;
     }
