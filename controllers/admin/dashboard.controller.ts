@@ -40,6 +40,7 @@ export const dashboard = async (req: Request, res: Response) => {
 
     const orderCurrentMonth = await Order.find({
       deleted: false,
+      paymentStatus: "paid",
       createdAt: {
         $gte: new Date(currentYear, currentMonth - 1, 1),
         $lt: new Date(currentYear, currentMonth, 1),
@@ -68,7 +69,7 @@ export const dashboard = async (req: Request, res: Response) => {
     if (totalRevenuePrevious > 0) {
       const percent = Math.round(
         ((totalRevenueCurrent - totalRevenuePrevious) / totalRevenuePrevious) *
-          100
+          100,
       );
       overview.totalRevenue.growth = percent;
     }
@@ -79,7 +80,7 @@ export const dashboard = async (req: Request, res: Response) => {
     const totalOrderPrevious = orderPreviousMonth.length;
     if (totalOrderPrevious > 0) {
       const percent = Math.round(
-        ((totalOrderCurrent - totalOrderPrevious) / totalOrderPrevious) * 100
+        ((totalOrderCurrent - totalOrderPrevious) / totalOrderPrevious) * 100,
       );
       overview.totalOrder.growth = percent;
     }
@@ -152,7 +153,7 @@ export const dashboard = async (req: Request, res: Response) => {
     res.status(200).json({ overview, orderNew: dataFinal });
   } catch (error) {
     console.log("Lỗi khi gọi dashboard", error);
-    res.status(500).json({ message: "Lỗi hệ thống!" });
+    res.status(500).json({ message: "Lỗi hệ thống." });
   }
 };
 
@@ -164,6 +165,7 @@ export const revenueChartPost = async (req: Request, res: Response) => {
     // Tất cả đơn hàng tháng hiện tại
     const orderCurrentMonth = await Order.find({
       deleted: false,
+      paymentStatus: "paid",
       createdAt: {
         $gte: new Date(currentYear, currentMonth - 1, 1),
         $lt: new Date(currentYear, currentMonth, 1),
@@ -173,6 +175,7 @@ export const revenueChartPost = async (req: Request, res: Response) => {
     // Tất cả đơn hàng tháng trước
     const orderPreviousMonth = await Order.find({
       deleted: false,
+      paymentStatus: "paid",
       createdAt: {
         $gte: new Date(previousYear, previousMonth - 1, 1),
         $lt: new Date(previousYear, previousMonth, 1),
@@ -202,7 +205,7 @@ export const revenueChartPost = async (req: Request, res: Response) => {
     res.status(200).json({ dataMonthCurrent, dataMonthPrevious });
   } catch (error) {
     console.log("Có lỗi khi gọi revenueChartPost", error);
-    res.status(500).json({ message: "Lỗi hệ thống!" });
+    res.status(500).json({ message: "Lỗi hệ thống." });
   }
 };
 

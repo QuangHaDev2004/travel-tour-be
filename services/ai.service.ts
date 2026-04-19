@@ -1,4 +1,4 @@
-import { ai } from "../config/aiConfig";
+import { ai } from "../config/ai.config";
 
 /**
  * Hàm phân tích ý định (Intent) của người dùng từ tin nhắn văn bản.

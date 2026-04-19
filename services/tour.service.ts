@@ -21,8 +21,6 @@ export const searchTours = async (intent: any) => {
     });
 
     const ids = cities.map((c) => c._id);
-    console.log("IDs: ", ids);
-    
 
     if (ids.length > 0) {
       query.locationsTo = { $in: ids };
@@ -74,8 +72,6 @@ export const searchTours = async (intent: any) => {
       },
     ];
   }
-
-  console.log("Intent in searchTours: ", intent);
 
   return await Tour.find(query).limit(5);
 };
