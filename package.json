@@ -4,7 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "nodemon index.ts"
+    "start": "nodemon index.ts",
+    "build": "tsc"
   },
   "dependencies": {
     "@google/genai": "^1.46.0",
@@ -27,6 +28,7 @@
     "mongoose": "^8.20.0",
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0",
+    "node-cron": "^4.2.1",
     "nodemailer": "^8.0.4",
     "slugify": "^1.6.6"
   },

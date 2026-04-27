@@ -12,6 +12,8 @@ import {
 import axios from "axios";
 import CryptoJS from "crypto-js";
 import { sortObject } from "../../helpers/sort.helper";
+import * as mailHelper from "../../helpers/mail.helper";
+import crypto from "crypto";
 
 /**
  * Xử lý tạo đơn đặt tour mới.
@@ -22,10 +24,18 @@ import { sortObject } from "../../helpers/sort.helper";
  */
 export const createPost = async (req: Request, res: Response) => {
   try {
-    req.body.orderCode = "OD" + generateRandomNumber(10);
+    const { email } = req.body;
 
+    if (!email) {
+      return res.status(400).json({
+        message: "Email là bắt buộc.",
+      });
+    }
+
+    req.body.orderCode = "OD" + generateRandomNumber(10);
     req.body.subTotal = 0;
 
+    // tính tiền + validate
     for (const item of req.body.items) {
       const itemInfo = await Tour.findOne({
         _id: item.tourId,
@@ -59,38 +69,192 @@ export const createPost = async (req: Request, res: Response) => {
         ) {
           throw new Error("Số lượng vượt quá số lượng tour.");
         }
-
-        await Tour.updateOne(
-          {
-            _id: item.tourId,
-          },
-          {
-            stockAdult: itemInfo.stockAdult - item.quantityAdult,
-            stockChildren: itemInfo.stockChildren - item.quantityChildren,
-            stockBaby: itemInfo.stockBaby - item.quantityBaby,
-          },
-        );
       }
     }
 
     req.body.discount = 0;
-
     req.body.total = req.body.subTotal - req.body.discount;
-
     req.body.paymentStatus = "unpaid";
 
-    req.body.status = "initial";
+    let confirmToken = "";
+    let confirmExpiresAt = null;
+
+    // phân luồng theo paymentMethod
+    if (req.body.paymentMethod === "money") {
+      req.body.status = "pending_confirm";
+
+      confirmToken = crypto.randomBytes(64).toString("hex");
+      confirmExpiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000);
+
+      req.body.confirmToken = confirmToken;
+      req.body.confirmExpiresAt = confirmExpiresAt;
+    } else {
+      req.body.status = "done";
+    }
 
     const newRecord = new Order(req.body);
     await newRecord.save();
 
+    // gửi mail nếu COD
+    if (req.body.paymentMethod === "money") {
+      const confirmLink = `${process.env.CLIENT_URL}/order/confirm?token=${confirmToken}`;
+
+      const title = "Xác nhận đơn đặt tour";
+
+      const content = `
+        <p>Xin chào <b>${newRecord.fullName}</b>,</p>
+
+        <p>Bạn vừa đặt tour thành công với mã đơn: <b>${newRecord.orderCode}</b></p>
+
+        <p>Vui lòng xác nhận đơn hàng bằng cách nhấn nút bên dưới:</p>
+
+        <div style="margin:20px 0">
+          <a href="${confirmLink}" 
+             style="
+               padding:12px 20px;
+               background:#2F67F6;
+               color:white;
+               text-decoration:none;
+               border-radius:6px;
+               display:inline-block;
+             ">
+            Xác nhận đơn hàng
+          </a>
+        </div>
+
+        <p>⏰ Link có hiệu lực trong <b>12 giờ</b>.</p>
+
+        <p>Nếu bạn không xác nhận, đơn hàng sẽ tự động bị huỷ.</p>
+
+        <br/>
+        <p>Trân trọng,</p>
+        <p><b>36Travel</b></p>
+      `;
+
+      mailHelper.sendMail(email, title, content);
+    }
+
     res.status(201).json({
-      message: "Chúc mừng bạn đã đặt tour thành công.",
-      orderCode: req.body.orderCode,
+      message:
+        req.body.paymentMethod === "money"
+          ? "Vui lòng kiểm tra email để xác nhận đơn hàng."
+          : "Đặt tour thành công.",
+      orderCode: newRecord.orderCode,
     });
   } catch (error) {
     console.log("Có lỗi khi gọi order createPost", error);
-    res.status(500).json({ message: "Lỗi hệ thống!" });
+    res.status(500).json({ message: "Lỗi hệ thống." });
+  }
+};
+
+/**
+ * Xác nhận đơn hàng từ email (COD)
+ * @author QuangHaDev - 22.04.2026
+ */
+export const confirmOrder = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.query;
+
+    if (!token || typeof token !== "string") {
+      return res.status(400).json({
+        message: "Token không hợp lệ.",
+      });
+    }
+
+    // tìm order theo token
+    const order = await Order.findOne({
+      confirmToken: token,
+      deleted: false,
+    });
+
+    if (!order) {
+      return res.status(404).json({
+        message: "Link xác nhận không hợp lệ hoặc đã được sử dụng.",
+      });
+    }
+
+    if (order.status === "cancel_expired") {
+      return res.status(400).json({
+        message: "Đơn hàng đã hết hạn xác nhận.",
+      });
+    }
+
+    if (order.status === "cancel") {
+      return res.status(400).json({
+        message: "Đơn hàng đã bị huỷ.",
+      });
+    }
+
+    // check đã confirm chưa
+    if (order.status === "done") {
+      return res.status(400).json({
+        message: "Đơn hàng đã được xác nhận trước đó.",
+      });
+    }
+
+    // check hết hạn
+    if (
+      !order.confirmExpiresAt ||
+      new Date(order.confirmExpiresAt).getTime() < Date.now()
+    ) {
+      return res.status(400).json({
+        message: "Link xác nhận đã hết hạn.",
+      });
+    }
+
+    // TRỪ STOCK
+    for (const item of order.items) {
+      const tour = await Tour.findOne({
+        _id: item.tourId,
+        deleted: false,
+        status: "active",
+      });
+
+      if (!tour) {
+        throw new Error("Tour không tồn tại.");
+      }
+
+      if (
+        tour.stockAdult == null ||
+        tour.stockChildren == null ||
+        tour.stockBaby == null
+      ) {
+        throw new Error("Stock không hợp lệ.");
+      }
+
+      if (
+        item.quantityAdult > tour.stockAdult ||
+        item.quantityChildren > tour.stockChildren ||
+        item.quantityBaby > tour.stockBaby
+      ) {
+        throw new Error("Không đủ số lượng tour.");
+      }
+
+      await Tour.updateOne(
+        { _id: item.tourId },
+        {
+          stockAdult: tour.stockAdult - item.quantityAdult,
+          stockChildren: tour.stockChildren - item.quantityChildren,
+          stockBaby: tour.stockBaby - item.quantityBaby,
+        },
+      );
+    }
+
+    // UPDATE ORDER
+    order.status = "done";
+    order.confirmToken = undefined;
+    order.confirmExpiresAt = undefined;
+
+    await order.save();
+
+    // RESPONSE
+    return res.status(200).json({
+      message: "Xác nhận đơn hàng thành công.",
+      orderCode: order.orderCode,
+    });
+  } catch (error) {
+    console.log("Lỗi confirm order:", error);
+    res.status(500).json({ message: "Lỗi hệ thống." });
   }
 };
 
@@ -110,7 +274,7 @@ export const success = async (req: Request, res: Response) => {
     });
 
     if (!orderDetail) {
-      return res.status(404).json({ message: "Đơn hàng không tồn tại!" });
+      return res.status(404).json({ message: "Đơn hàng không tồn tại." });
     }
 
     const dataFinal = {
@@ -204,7 +368,7 @@ export const success = async (req: Request, res: Response) => {
     res.status(200).json({ orderDetail: dataFinal });
   } catch (error) {
     console.log("Có lỗi khi gọi order success", error);
-    res.status(500).json({ message: "Lỗi hệ thống!" });
+    res.status(500).json({ message: "Lỗi hệ thống." });
   }
 };
 
@@ -277,7 +441,7 @@ export const paymentZaloPay = async (req: Request, res: Response) => {
     }
   } catch (error) {
     console.log("Có lỗi khi gọi order paymentZaloPay", error);
-    res.status(500).json({ message: "Lỗi hệ thống!" });
+    res.status(500).json({ message: "Lỗi hệ thống." });
   }
 };
 
@@ -320,6 +484,53 @@ export const paymentZaloPayResultPost = async (req: Request, res: Response) => {
           paymentStatus: "paid",
         },
       );
+
+      // Cập nhật số lượng
+      const order = await Order.findOne({
+        phone: phone,
+        orderCode: orderCode,
+      });
+
+      if (!order) {
+        return res.status(404).json({ message: "Đơn hàng không tồn tại." });
+      }
+
+      for (const item of order.items) {
+        const itemInfo = await Tour.findOne({
+          _id: item.tourId,
+          deleted: false,
+          status: "active",
+        });
+
+        if (itemInfo) {
+          if (
+            itemInfo.stockAdult == null ||
+            itemInfo.stockChildren == null ||
+            itemInfo.stockBaby == null
+          ) {
+            throw new Error("Số lượng không hợp lệ.");
+          }
+
+          if (
+            item.quantityAdult > itemInfo.stockAdult ||
+            item.quantityChildren > itemInfo.stockChildren ||
+            item.quantityBaby > itemInfo.stockBaby
+          ) {
+            throw new Error("Số lượng vượt quá số lượng tour.");
+          }
+
+          await Tour.updateOne(
+            {
+              _id: item.tourId,
+            },
+            {
+              stockAdult: itemInfo.stockAdult - item.quantityAdult,
+              stockChildren: itemInfo.stockChildren - item.quantityChildren,
+              stockBaby: itemInfo.stockBaby - item.quantityBaby,
+            },
+          );
+        }
+      }
 
       result.return_code = 1;
       result.return_message = "success";
@@ -443,6 +654,7 @@ export const paymentVNPayResult = async (req: Request, res: Response) => {
         return res.status(400).send("Transaction reference missing");
       }
 
+      // Cập nhật paymentStatus trong CSDL
       const [phone, orderCode] = txnRef.split("-");
       await Order.updateOne(
         {
@@ -453,6 +665,53 @@ export const paymentVNPayResult = async (req: Request, res: Response) => {
           paymentStatus: "paid",
         },
       );
+
+      // Cập nhật số lượng
+      const order = await Order.findOne({
+        phone: phone,
+        orderCode: orderCode,
+      });
+
+      if (!order) {
+        return res.status(404).json({ message: "Đơn hàng không tồn tại." });
+      }
+
+      for (const item of order.items) {
+        const itemInfo = await Tour.findOne({
+          _id: item.tourId,
+          deleted: false,
+          status: "active",
+        });
+
+        if (itemInfo) {
+          if (
+            itemInfo.stockAdult == null ||
+            itemInfo.stockChildren == null ||
+            itemInfo.stockBaby == null
+          ) {
+            throw new Error("Số lượng không hợp lệ.");
+          }
+
+          if (
+            item.quantityAdult > itemInfo.stockAdult ||
+            item.quantityChildren > itemInfo.stockChildren ||
+            item.quantityBaby > itemInfo.stockBaby
+          ) {
+            throw new Error("Số lượng vượt quá số lượng tour.");
+          }
+
+          await Tour.updateOne(
+            {
+              _id: item.tourId,
+            },
+            {
+              stockAdult: itemInfo.stockAdult - item.quantityAdult,
+              stockChildren: itemInfo.stockChildren - item.quantityChildren,
+              stockBaby: itemInfo.stockBaby - item.quantityBaby,
+            },
+          );
+        }
+      }
 
       res.redirect(
         `${process.env.WEBSITE_DOMAIN_FE}/order/success?orderCode=${orderCode}&phone=${phone}`,
@@ -554,7 +813,7 @@ export const tracking = async (req: Request, res: Response) => {
 
 /**
  * Xử lý hủy đơn hàng từ phía người dùng.
- * Chỉ cho phép hủy đơn ở trạng thái 'initial' và chưa thanh toán.
+ * Chỉ cho phép hủy đơn ở trạng thái 'pending_confirm' và chưa thanh toán.
  * @param {Request} req - Body chứa orderId.
  * @author QuangHaDev - 04.04.2026
  */
@@ -577,7 +836,7 @@ export const cancelOrder = async (req: Request, res: Response) => {
       });
     }
 
-    if (order.status !== "initial") {
+    if (order.status !== "pending_confirm") {
       return res.status(400).json({
         message: "Không thể hủy đơn hàng này.",
       });

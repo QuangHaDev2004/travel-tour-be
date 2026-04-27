@@ -5,6 +5,7 @@ const schema = new mongoose.Schema(
     orderCode: String,
     fullName: String,
     phone: String,
+    email: String,
     note: String,
     items: Array,
     subTotal: Number,
@@ -13,6 +14,8 @@ const schema = new mongoose.Schema(
     paymentMethod: String,
     paymentStatus: String,
     status: String,
+    confirmToken: String,
+    confirmExpiresAt: Date,
     updatedBy: String,
     deleted: {
       type: Boolean,
@@ -23,7 +26,7 @@ const schema = new mongoose.Schema(
   },
   {
     timestamps: true, // Tự động sinh ra trường createdAt và updatedAt
-  }
+  },
 );
 
 const Order = mongoose.model("Order", schema, "orders");
