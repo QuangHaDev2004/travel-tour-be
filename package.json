@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@google/genai": "^1.46.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",
     "@types/jsonwebtoken": "^9.0.10",
