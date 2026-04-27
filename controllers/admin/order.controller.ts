@@ -210,10 +210,10 @@ export const editPatch = async (req: Request, res: Response) => {
       req.body,
     );
 
-    res.status(200).json({ message: "Cập nhật đơn hàng thành công!" });
+    res.status(200).json({ message: "Cập nhật đơn hàng thành công." });
   } catch (error) {
-    console.log("Có lỗi khi gọi order editPatch", error);
-    res.status(500).json({ message: "Lỗi hệ thống" });
+    console.log("Có lỗi khi gọi order editPatch: ", error);
+    res.status(500).json({ message: "Lỗi hệ thống." });
   }
 };
 
@@ -226,6 +226,22 @@ export const deletePatch = async (req: AccountRequest, res: Response) => {
   try {
     // Lấy id đơn hàng từ params
     const id = req.params.id;
+
+    // Kiểm tra xem đơn hàng có tồn tại và chưa bị xóa mềm hay không
+    const order = await Order.findById(id);
+
+    if (!order) {
+      return res.status(404).json({
+        message: "Đơn hàng không tồn tại.",
+      });
+    }
+
+    // Chặn nếu đã thanh toán
+    if (order.paymentStatus === "paid") {
+      return res.status(400).json({
+        message: "Đơn hàng đã thanh toán, không thể xóa.",
+      });
+    }
 
     // Cập nhật trạng thái xóa mềm của đơn hàng
     await Order.updateOne(
@@ -240,9 +256,9 @@ export const deletePatch = async (req: AccountRequest, res: Response) => {
     );
 
     // Trả kết quả thành công về phía client
-    res.status(200).json({ message: "Xóa đơn hàng thành công" });
+    res.status(200).json({ message: "Xóa đơn hàng thành công." });
   } catch (error) {
-    console.log("Có lỗi khi gọi order deletePatch", error);
-    res.status(500).json({ message: "Lỗi hệ thống" });
+    console.log("Có lỗi khi gọi order deletePatch: ", error);
+    res.status(500).json({ message: "Lỗi hệ thống." });
   }
 };

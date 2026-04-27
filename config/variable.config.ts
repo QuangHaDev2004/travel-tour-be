@@ -34,8 +34,8 @@ export const paymentStatusList = [
 
 export const statusList = [
   {
-    label: "Khởi tạo",
-    value: "initial",
+    label: "Chờ xác nhận",
+    value: "pending_confirm",
     color: "orange",
   },
   {
@@ -46,6 +46,11 @@ export const statusList = [
   {
     label: "Đã hủy",
     value: "cancel",
+    color: "red",
+  },
+  {
+    label: "Hủy tự động",
+    value: "cancel_expired",
     color: "red",
   },
 ];

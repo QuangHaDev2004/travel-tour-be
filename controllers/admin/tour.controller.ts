@@ -8,6 +8,7 @@ import moment from "moment";
 import AccountAdmin from "../../models/account-admin.model";
 import { getCategoryChild } from "../../helpers/category.helper";
 import { SLUG_OPTIONS } from "../../config/slug.config";
+import Order from "../../models/order.model";
 
 export const createPost = async (req: AccountRequest, res: Response) => {
   try {
@@ -395,6 +396,18 @@ export const deletePatch = async (req: AccountRequest, res: Response) => {
   try {
     const id = req.params.id;
 
+    // Check có đơn hàng liên quan không
+    const existingOrder = await Order.exists({
+      "items.tourId": id,
+      deleted: false,
+    });
+
+    if (existingOrder) {
+      return res.status(400).json({
+        message: "Không thể xóa tour đã phát sinh giao dịch.",
+      });
+    }
+
     await Tour.updateOne(
       {
         _id: id,
@@ -406,10 +419,10 @@ export const deletePatch = async (req: AccountRequest, res: Response) => {
       },
     );
 
-    res.status(200).json({ message: "Xóa tour thành công!" });
+    res.status(200).json({ message: "Xóa tour thành công." });
   } catch (error) {
     console.log("Lỗi khi gọi deletePatch", error);
-    res.status(500).json({ message: "Lỗi hệ thống!" });
+    res.status(500).json({ message: "Lỗi hệ thống." });
   }
 };
 

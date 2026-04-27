@@ -9,7 +9,10 @@ router.get("/success", orderController.success);
 
 router.get("/payment-zalopay", orderController.paymentZaloPay);
 
-router.post("/payment-zalopay-result", orderController.paymentZaloPayResultPost);
+router.post(
+  "/payment-zalopay-result",
+  orderController.paymentZaloPayResultPost,
+);
 
 router.get("/payment-vnpay", orderController.paymentVNPay);
 
@@ -18,5 +21,7 @@ router.get("/payment-vnpay-result", orderController.paymentVNPayResult);
 router.get("/tracking", orderController.tracking);
 
 router.patch("/cancel", orderController.cancelOrder);
+
+router.get("/confirm", orderController.confirmOrder);
 
 export default router;
