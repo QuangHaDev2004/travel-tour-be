@@ -26,7 +26,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "http://localhost:3000",
-      // `${process.env.WEBSITE_DOMAIN_FE}`,
+      `${process.env.WEBSITE_DOMAIN_FE}`,
     ],
     credentials: true,
   }),
@@ -38,11 +38,14 @@ app.use(express.json());
 // Lấy được cookie từ fe
 app.use(cookieParser());
 
-// app.post("/admin")
-
 // Thiết lập đường dẫn
 app.use("/admin", adminRoutes);
 app.use("/", clientRoutes);
+
+// fix Render sleep
+app.get("/api/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
 
 app.listen(port, () => {
   console.log(`Website đang chạy trên cổng ${port}`);
