@@ -26,8 +26,8 @@ app.use(
     origin: [
       "http://localhost:5173",
       "http://localhost:3000",
-      // `${process.env.WEBSITE_DOMAIN_FE}`,
-      // `${process.env.WEBSITE_DOMAIN_ADMIN}`,
+      `${process.env.WEBSITE_DOMAIN_FE}`,
+      `${process.env.WEBSITE_DOMAIN_ADMIN}`,
     ],
     credentials: true,
   }),
